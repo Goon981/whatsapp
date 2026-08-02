@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% block content %}
+  <h1 class="page-title">Boutiques</h1>
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>Nom</th><th>Slug</th><th>Ville</th><th>Statut</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for s in shops %}
+        <tr>
+          <td><a href="/s/{{ s.slug }}" target="_blank">{{ s.name }}</a></td>
+          <td class="muted">{{ s.slug }}</td>
+          <td>{{ s.city or '—' }}</td>
+          <td>
+            {% if s.status.value == 'active' %}<span class="badge green">Active</span>
+            {% elif s.status.value == 'suspended' %}<span class="badge red">Suspendue</span>
+            {% else %}<span class="badge gray">{{ s.status.value }}</span>{% endif %}
+          </td>
+          <td>
+            {% if s.status.value == 'active' %}
+            <form method="post" action="/admin/shops/{{ s.id }}/suspend" onsubmit="return confirm('Suspendre {{ s.name }} ?')">
+              <button class="btn danger sm" type="submit">Suspendre</button>
+            </form>
+            {% else %}
+            <form method="post" action="/admin/shops/{{ s.id }}/activate">
+              <button class="btn sm" type="submit">Réactiver</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">RM-01 : une boutique suspendue reste invisible au public mais ses données sont conservées.</p>
+{% endblock %}

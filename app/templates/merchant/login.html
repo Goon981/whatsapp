@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion · SmartShop</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">🛍️</div><h1>SmartShop WhatsApp</h1></div></header>
+  <main class="container page">
+    <h1 class="page-title">{{ title or 'Connexion commerçant' }}</h1>
+    {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+    <div class="card">
+      {% if mode == 'register' %}
+      <form method="post" action="/app/register">
+        <label for="full_name">Nom complet</label>
+        <input id="full_name" name="full_name" required>
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" placeholder="vous@exemple.com">
+        <label for="phone">Téléphone</label>
+        <input id="phone" name="phone" placeholder="+237…">
+        <label for="password">Mot de passe (8 caractères min.)</label>
+        <input id="password" name="password" type="password" minlength="8" required>
+        <div class="checkline mt"><input type="checkbox" id="accept" name="accept_terms" required checked><label for="accept" style="margin:0" class="hint">J'accepte les conditions d'utilisation et la politique de confidentialité</label></div>
+        <button class="btn block mt" type="submit">Créer mon compte</button>
+      </form>
+      <p class="center mt muted">Déjà inscrit ? <a href="/app/login">Se connecter</a></p>
+      {% else %}
+      <form method="post" action="/app/login">
+        <label for="identifier">E-mail ou téléphone</label>
+        <input id="identifier" name="identifier" required autocomplete="username">
+        <label for="password">Mot de passe</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password">
+        <button class="btn block mt" type="submit">Se connecter</button>
+      </form>
+      <p class="center mt muted">Nouveau ? <a href="/app/register">Créer une boutique</a></p>
+      {% endif %}
+    </div>
+    <p class="center muted"><a href="/">← Accueil</a></p>
+  </main>
+</body>
+</html>

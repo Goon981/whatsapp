@@ -1,0 +1,25 @@
+{% extends "merchant/base.html" %}
+{% block title %}Clients{% endblock %}
+{% block content %}
+  <h1 class="page-title">Clients</h1>
+  {% if not customers %}
+    <div class="card center muted">Aucun client pour l'instant.</div>
+  {% else %}
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>Nom</th><th>Téléphone</th><th>Commandes</th><th>Dépenses</th></tr></thead>
+      <tbody>
+      {% for c in customers %}
+        <tr>
+          <td>{{ c.full_name }}{% if c.is_blocked %} <span class="badge red">Bloqué</span>{% endif %}</td>
+          <td>{{ c.phone }}</td>
+          <td>{{ c.orders_count }}</td>
+          <td>{{ c.total_spent|fcfa }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">Export réservé aux utilisateurs autorisés · consentement requis avant toute campagne (§6.8).</p>
+  {% endif %}
+{% endblock %}

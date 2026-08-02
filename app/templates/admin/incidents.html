@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% block content %}
+  <h1 class="page-title">Incidents de paiement</h1>
+  {% if not incidents %}
+    <div class="card center muted">Aucun incident de paiement.</div>
+  {% else %}
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>Référence</th><th>Boutique</th><th>Commande</th><th>Montant</th><th>Statut</th></tr></thead>
+      <tbody>
+      {% for p in incidents %}
+        <tr>
+          <td class="muted">{{ p.reference }}</td>
+          <td>#{{ p.shop_id }}</td>
+          <td>#{{ p.order_id }}</td>
+          <td>{{ p.amount|fcfa }}</td>
+          <td><span class="badge red">{{ p.status.value }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% endblock %}

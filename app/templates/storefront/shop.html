@@ -1,0 +1,50 @@
+{% extends "storefront/base.html" %}
+{% block content %}
+  {% if shop.banner_url %}<img src="{{ shop.banner_url }}" alt="" style="border-radius:var(--radius);margin-bottom:14px">{% endif %}
+  {% if not shop.is_open and shop.closed_message %}
+    <div class="flash info">{{ shop.closed_message }}</div>
+  {% endif %}
+
+  <form method="get" action="/s/{{ shop.slug }}" class="mb">
+    <input type="search" name="q" value="{{ q or '' }}" placeholder="Rechercher un produit…" aria-label="Rechercher">
+  </form>
+
+  {% if categories %}
+  <div class="pill-tabs">
+    <a href="/s/{{ shop.slug }}" class="{% if not current_category %}active{% endif %}">Tout</a>
+    {% for cat in categories %}
+      <a href="/s/{{ shop.slug }}?category={{ cat.id }}" class="{% if current_category == cat.id %}active{% endif %}">{{ cat.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not products %}
+    <div class="card center muted">Aucun produit ne correspond.</div>
+  {% else %}
+  <div class="grid">
+    {% for p in products %}
+    <a class="product" href="/s/{{ shop.slug }}/p/{{ p.id }}">
+      <div class="thumb">{% if p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}" style="width:100%;height:100%;object-fit:cover">{% else %}🛒{% endif %}</div>
+      <div class="body">
+        <div class="name">{{ p.name }}</div>
+        <div class="price">
+          {{ p.effective_price|fcfa }}
+          {% if p.promo_price is not none and p.promo_price < p.price %}<span class="old">{{ p.price|fcfa }}</span>{% endif %}
+        </div>
+        {% if p.status.value == 'out_of_stock' %}<span class="badge red">Rupture</span>
+        {% elif p.status.value == 'preorder' %}<span class="badge amber">Précommande</span>
+        {% elif p.is_low_stock %}<span class="badge amber">Bientôt épuisé</span>
+        {% else %}<span class="badge green">Disponible</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="cartbar" id="cartbar" hidden>
+    <div class="container">
+      <div class="grow"><strong id="cartbar-count">0</strong> article(s) · <strong id="cartbar-total">0 FCFA</strong></div>
+      <a class="btn" href="/s/{{ shop.slug }}/panier">Voir le panier →</a>
+    </div>
+  </div>
+{% endblock %}

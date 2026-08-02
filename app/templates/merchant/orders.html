@@ -1,0 +1,29 @@
+{% extends "merchant/base.html" %}
+{% block title %}Commandes{% endblock %}
+{% block content %}
+  <h1 class="page-title">Commandes</h1>
+  <div class="pill-tabs">
+    <a href="/app/orders" class="{% if not current_status %}active{% endif %}">Toutes</a>
+    {% for key, label in statuses %}
+      <a href="/app/orders?status={{ key }}" class="{% if current_status == key %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  {% if not orders %}
+    <div class="card center muted">Aucune commande.</div>
+  {% else %}
+  {% for o in orders %}
+  <a class="card" href="/app/orders/{{ o.id }}" style="display:block">
+    <div class="list-row">
+      <div class="grow">
+        <strong>{{ o.reference }}</strong> · {{ o.customer_name }}<br>
+        <span class="muted">{{ o.created_at.strftime('%d/%m %H:%M') }} · {{ o.items|length }} article(s)</span>
+      </div>
+      <div class="right">
+        <strong>{{ o.total|fcfa }}</strong><br>
+        <span class="badge {{ status_class.get(o.status.value, 'gray') }}">{{ status_labels.get(o.status.value) }}</span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+  {% endif %}
+{% endblock %}

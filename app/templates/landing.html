@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartShop WhatsApp — votre boutique mobile en 30 minutes</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">🛍️</div><h1>SmartShop WhatsApp</h1></div></header>
+  <main class="container page">
+    <div class="card center">
+      <div style="font-size:3rem">🛍️💬</div>
+      <h1>Vendez sur WhatsApp, simplement.</h1>
+      <p class="muted">Créez votre boutique, recevez des commandes, encaissez par Mobile Money et gérez vos ventes depuis un téléphone — sans compétence technique.</p>
+      <a class="btn block mt" href="/app/register">Créer ma boutique gratuitement</a>
+      <a class="btn outline block mt" href="/app/login">J'ai déjà un compte</a>
+    </div>
+
+    <div class="card">
+      <h3>Comment ça marche</h3>
+      <div class="list-row"><div class="grow"><strong>1. Créez votre boutique</strong><br><span class="muted">Nom, secteur, WhatsApp, c'est parti.</span></div>🏪</div>
+      <div class="list-row"><div class="grow"><strong>2. Ajoutez vos produits</strong><br><span class="muted">Photos, prix, variantes et stock.</span></div>📦</div>
+      <div class="list-row"><div class="grow"><strong>3. Partagez votre lien</strong><br><span class="muted">Vos clients commandent et paient.</span></div>🔗</div>
+      <div class="list-row"><div class="grow"><strong>4. Gérez tout</strong><br><span class="muted">Commandes, stock et statistiques.</span></div>📊</div>
+    </div>
+
+    {% if demo_shop %}
+    <div class="card center">
+      <h3>Boutique de démonstration</h3>
+      <p class="muted">Découvrez le parcours client&nbsp;:</p>
+      <a class="btn wa block" href="/s/{{ demo_shop }}">Visiter la boutique démo →</a>
+    </div>
+    {% endif %}
+
+    <p class="center muted"><a href="/admin">Espace super-administration</a> · <a href="/docs">API</a></p>
+  </main>
+</body>
+</html>

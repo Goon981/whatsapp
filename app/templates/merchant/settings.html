@@ -1,0 +1,45 @@
+{% extends "merchant/base.html" %}
+{% block title %}Réglages{% endblock %}
+{% block content %}
+  <h1 class="page-title">Réglages de la boutique</h1>
+  <form method="post" action="/app/settings">
+    <div class="card">
+      <h3>Identité</h3>
+      <label for="name">Nom</label><input id="name" name="name" value="{{ shop.name }}" required>
+      <label for="description">Description</label><textarea id="description" name="description">{{ shop.description or '' }}</textarea>
+      <label for="theme_color">Couleur principale</label><input id="theme_color" name="theme_color" type="color" value="{{ shop.theme_color }}" style="height:52px">
+      <label for="logo_url">Logo (URL)</label><input id="logo_url" name="logo_url" value="{{ shop.logo_url or '' }}">
+    </div>
+    <div class="card">
+      <h3>Contact & horaires</h3>
+      <label for="whatsapp_number">Numéro WhatsApp</label><input id="whatsapp_number" name="whatsapp_number" value="{{ shop.whatsapp_number or '' }}">
+      <label for="contact_phone">Téléphone</label><input id="contact_phone" name="contact_phone" value="{{ shop.contact_phone or '' }}">
+      <label for="city">Ville</label><input id="city" name="city" value="{{ shop.city or '' }}">
+      <label for="address">Adresse</label><input id="address" name="address" value="{{ shop.address or '' }}">
+      <label for="opening_hours">Horaires</label><input id="opening_hours" name="opening_hours" value="{{ shop.opening_hours or '' }}" placeholder="Lun-Sam 8h-20h">
+      <div class="checkline mt"><input type="checkbox" id="is_open" name="is_open" {% if shop.is_open %}checked{% endif %}><label for="is_open" style="margin:0">Boutique ouverte</label></div>
+      <label for="closed_message">Message hors horaires</label><input id="closed_message" name="closed_message" value="{{ shop.closed_message or '' }}">
+    </div>
+    <div class="card">
+      <h3>Commande & paiement</h3>
+      <label for="min_order_amount">Montant minimum de commande (FCFA)</label><input id="min_order_amount" name="min_order_amount" type="number" min="0" value="{{ shop.min_order_amount }}">
+      <div class="checkline mt"><input type="checkbox" id="accept_mtn_momo" name="accept_mtn_momo" {% if shop.accept_mtn_momo %}checked{% endif %}><label for="accept_mtn_momo" style="margin:0">MTN Mobile Money</label></div>
+      <div class="checkline mt"><input type="checkbox" id="accept_orange_money" name="accept_orange_money" {% if shop.accept_orange_money %}checked{% endif %}><label for="accept_orange_money" style="margin:0">Orange Money</label></div>
+      <div class="checkline mt"><input type="checkbox" id="accept_cash_on_delivery" name="accept_cash_on_delivery" {% if shop.accept_cash_on_delivery %}checked{% endif %}><label for="accept_cash_on_delivery" style="margin:0">Paiement à la livraison</label></div>
+      <div class="checkline mt"><input type="checkbox" id="reserve_stock_on_confirm" name="reserve_stock_on_confirm" {% if shop.reserve_stock_on_confirm %}checked{% endif %}><label for="reserve_stock_on_confirm" style="margin:0" class="hint">Réserver le stock dès la confirmation (sinon au paiement) — RM-04</label></div>
+    </div>
+    <button class="btn block" type="submit">Enregistrer</button>
+  </form>
+
+  <div class="card mt">
+    <h3>Zones de livraison</h3>
+    {% for z in zones %}<div class="list-row"><div class="grow">{{ z.name }}</div><span>{{ z.fee|fcfa }}</span></div>{% else %}<p class="muted">Aucune zone.</p>{% endfor %}
+    <form method="post" action="/app/delivery-zones" class="mt">
+      <div class="row">
+        <div><input name="name" placeholder="Ex. Akwa" required></div>
+        <div><input name="fee" type="number" min="0" placeholder="Frais FCFA" value="0"></div>
+      </div>
+      <button class="btn secondary sm mt" type="submit">Ajouter la zone</button>
+    </form>
+  </div>
+{% endblock %}

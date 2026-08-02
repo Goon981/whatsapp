@@ -1,0 +1,40 @@
+{% extends "merchant/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="row">
+      <div><strong>Lien de la boutique</strong><br><a href="/s/{{ shop.slug }}" target="_blank">{{ public_base }}/s/{{ shop.slug }}</a></div>
+    </div>
+    <div class="mt"><a class="btn wa sm" href="/s/{{ shop.slug }}" target="_blank">Ouvrir la boutique</a>
+      <button class="btn secondary sm" onclick="navigator.clipboard.writeText('{{ public_base }}/s/{{ shop.slug }}');this.textContent='Copié ✓'">Copier le lien</button></div>
+  </div>
+
+  <div class="stats mb">
+    <div class="stat"><div class="k">CA aujourd'hui</div><div class="v">{{ stats.revenue_day|fcfa }}</div></div>
+    <div class="stat"><div class="k">CA 7 jours</div><div class="v">{{ stats.revenue_week|fcfa }}</div></div>
+    <div class="stat"><div class="k">CA 30 jours</div><div class="v">{{ stats.revenue_month|fcfa }}</div></div>
+    <div class="stat"><div class="k">Commandes</div><div class="v">{{ stats.total_orders }}</div></div>
+    <div class="stat"><div class="k">Panier moyen</div><div class="v">{{ stats.avg_basket|fcfa }}</div></div>
+    <div class="stat"><div class="k">Taux annulation</div><div class="v">{{ stats.cancellation_rate }}%</div></div>
+    <div class="stat"><div class="k">Paiements en attente</div><div class="v">{{ stats.pending_payments }}</div></div>
+    <div class="stat"><div class="k">Nouveaux clients (7j)</div><div class="v">{{ stats.new_customers }}</div></div>
+  </div>
+
+  <div class="card">
+    <h3>🏆 Meilleurs produits</h3>
+    {% if stats.top_products %}
+      {% for p in stats.top_products %}
+      <div class="list-row"><div class="grow">{{ p.name }}</div><strong>{{ p.quantity }} vendus</strong></div>
+      {% endfor %}
+    {% else %}<p class="muted">Pas encore de ventes.</p>{% endif %}
+  </div>
+
+  <div class="card">
+    <h3>⚠️ Stock bientôt épuisé</h3>
+    {% if stats.low_stock %}
+      {% for p in stats.low_stock %}
+      <div class="list-row"><div class="grow">{{ p.name }}</div><span class="badge amber">{{ p.stock }} restants</span></div>
+      {% endfor %}
+    {% else %}<p class="muted">Tous les stocks sont confortables.</p>{% endif %}
+  </div>
+{% endblock %}

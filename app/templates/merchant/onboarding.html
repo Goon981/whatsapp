@@ -1,0 +1,23 @@
+{% extends "merchant/base.html" %}
+{% block title %}Créer ma boutique{% endblock %}
+{% block content %}
+  <h1 class="page-title">Créez votre boutique</h1>
+  <p class="muted">Quelques informations et votre boutique est en ligne. Vous pourrez tout modifier ensuite.</p>
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+  <form method="post" action="/app/onboarding" class="card">
+    <label for="name">Nom de la boutique *</label>
+    <input id="name" name="name" required placeholder="Chez Amina">
+    <label for="sector">Secteur</label>
+    <select id="sector" name="sector">
+      <option value="restaurant">Restaurant</option>
+      <option value="mode">Mode / vêtements</option>
+      <option value="cosmetique">Cosmétique</option>
+      <option value="general" selected>Commerce général</option>
+    </select>
+    <label for="whatsapp_number">Numéro WhatsApp de réception *</label>
+    <input id="whatsapp_number" name="whatsapp_number" required placeholder="+2376XXXXXXXX">
+    <label for="city">Ville</label>
+    <input id="city" name="city" placeholder="Douala">
+    <button class="btn block mt" type="submit">Publier ma boutique</button>
+  </form>
+{% endblock %}

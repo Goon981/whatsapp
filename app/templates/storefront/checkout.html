@@ -1,0 +1,68 @@
+{% extends "storefront/base.html" %}
+{% block title %}Commande{% endblock %}
+{% block content %}
+  <h1 class="page-title">Finaliser la commande</h1>
+  <div id="checkout-error" class="flash err" hidden></div>
+
+  <form id="checkout-form">
+    <div class="card">
+      <h3>Vos coordonnées</h3>
+      <label for="customer_name">Nom complet *</label>
+      <input id="customer_name" name="customer_name" required autocomplete="name">
+      <label for="customer_phone">Téléphone (WhatsApp) *</label>
+      <input id="customer_phone" name="customer_phone" required inputmode="tel" placeholder="+237 6XX XXX XXX" autocomplete="tel">
+    </div>
+
+    <div class="card">
+      <h3>Livraison</h3>
+      <div class="checkline mb">
+        <input type="checkbox" id="is_pickup" onchange="togglePickup()">
+        <label for="is_pickup" style="margin:0">Retrait en boutique</label>
+      </div>
+      <div id="delivery-fields">
+        {% if zones %}
+        <label for="delivery_zone_id">Zone de livraison</label>
+        <select id="delivery_zone_id" name="delivery_zone_id">
+          <option value="">— Choisir —</option>
+          {% for z in zones %}<option value="{{ z.id }}">{{ z.name }} ({{ z.fee|fcfa }})</option>{% endfor %}
+        </select>
+        {% endif %}
+        <label for="delivery_city">Ville</label>
+        <input id="delivery_city" name="delivery_city">
+        <label for="delivery_district">Quartier</label>
+        <input id="delivery_district" name="delivery_district">
+        <label for="delivery_details">Indications (repère, étage…)</label>
+        <input id="delivery_details" name="delivery_details">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Paiement</h3>
+      {% if shop.accept_mtn_momo %}
+      <div class="checkline"><input type="radio" name="payment_method" value="mtn_momo" id="pm_mtn"><label for="pm_mtn" style="margin:0">📱 MTN Mobile Money</label></div>{% endif %}
+      {% if shop.accept_orange_money %}
+      <div class="checkline mt"><input type="radio" name="payment_method" value="orange_money" id="pm_om"><label for="pm_om" style="margin:0">📱 Orange Money</label></div>{% endif %}
+      {% if shop.accept_cash_on_delivery %}
+      <div class="checkline mt"><input type="radio" name="payment_method" value="cash_on_delivery" id="pm_cod" checked><label for="pm_cod" style="margin:0">💵 Paiement à la livraison</label></div>{% endif %}
+    </div>
+
+    <div class="card">
+      <h3>Récapitulatif</h3>
+      <div id="checkout-items"></div>
+      <div class="divider"></div>
+      <div class="list-row"><div class="grow">Sous-total (indicatif)</div><strong id="co-subtotal">0 FCFA</strong></div>
+      <label for="customer_note">Note pour le commerçant</label>
+      <textarea id="customer_note" name="customer_note" placeholder="Optionnel"></textarea>
+      <div class="checkline mt">
+        <input type="checkbox" id="marketing_consent">
+        <label for="marketing_consent" style="margin:0" class="hint">J'accepte de recevoir des offres de cette boutique</label>
+      </div>
+    </div>
+
+    <button class="btn block" type="submit" id="submit-btn">Valider et envoyer sur WhatsApp</button>
+    <p class="hint center mt">Le total définitif est recalculé par le serveur avant validation.</p>
+  </form>
+{% endblock %}
+{% block scripts %}
+<script>initCheckout();</script>
+{% endblock %}

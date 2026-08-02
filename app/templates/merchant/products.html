@@ -1,0 +1,55 @@
+{% extends "merchant/base.html" %}
+{% block title %}Produits{% endblock %}
+{% block content %}
+  <h1 class="page-title">Produits</h1>
+
+  <details class="card">
+    <summary style="font-weight:700;cursor:pointer">➕ Ajouter un produit</summary>
+    <form method="post" action="/app/products" class="mt">
+      <label for="name">Nom *</label>
+      <input id="name" name="name" required>
+      <div class="row">
+        <div><label for="price">Prix (FCFA) *</label><input id="price" name="price" type="number" min="0" required></div>
+        <div><label for="promo_price">Prix promo</label><input id="promo_price" name="promo_price" type="number" min="0"></div>
+      </div>
+      <div class="row">
+        <div><label for="stock">Stock</label><input id="stock" name="stock" type="number" min="0" value="0"></div>
+        <div><label for="low_stock_threshold">Seuil d'alerte</label><input id="low_stock_threshold" name="low_stock_threshold" type="number" min="0" value="5"></div>
+      </div>
+      <label for="category_id">Catégorie</label>
+      <select id="category_id" name="category_id">
+        <option value="">— Aucune —</option>
+        {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+      <label for="image_url">Image (URL)</label>
+      <input id="image_url" name="image_url" placeholder="https://…">
+      <label for="description">Description</label>
+      <textarea id="description" name="description"></textarea>
+      <label for="variants">Variantes (optionnel, une par ligne : Nom|prix|stock)</label>
+      <textarea id="variants" name="variants" placeholder="Taille M|2500|10&#10;Taille L|3000|5"></textarea>
+      <button class="btn block mt" type="submit">Enregistrer le produit</button>
+    </form>
+  </details>
+
+  {% if not products %}
+    <div class="card center muted">Aucun produit. Ajoutez votre premier article ci-dessus.</div>
+  {% else %}
+  {% for p in products %}
+  <div class="card">
+    <div class="list-row">
+      <div class="thumb" style="width:52px;height:52px;border-radius:10px;flex:none;background:#eef3f2;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        {% if p.image_url %}<img src="{{ p.image_url }}" style="width:100%;height:100%;object-fit:cover">{% else %}📦{% endif %}
+      </div>
+      <div class="grow">
+        <strong>{{ p.name }}</strong><br>
+        <span class="price">{{ p.effective_price|fcfa }}</span>
+        {% if p.is_low_stock %}<span class="badge amber">Stock {{ p.stock }}</span>{% else %}<span class="muted">Stock {{ p.stock }}</span>{% endif %}
+      </div>
+      <form method="post" action="/app/products/{{ p.id }}/archive" onsubmit="return confirm('Archiver ce produit ?')">
+        <button class="btn danger sm" type="submit">Archiver</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+{% endblock %}

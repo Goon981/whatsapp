@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}{{ shop.name }}{% endblock %} · SmartShop</title>
+  <meta name="description" content="{{ shop.description or shop.name }}">
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% if shop %}<style>:root{ --accent: {{ shop.theme_color }}; }</style>{% endif %}
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      {% if shop.logo_url %}<img class="logo" src="{{ shop.logo_url }}" alt="">
+      {% else %}<div class="logo" style="display:flex;align-items:center;justify-content:center;">🛍️</div>{% endif %}
+      <div>
+        <h1><a href="/s/{{ shop.slug }}">{{ shop.name }}</a></h1>
+        <div class="sub">
+          {% if shop.is_open %}🟢 Ouvert{% else %}🔴 Fermé{% endif %}
+          {% if shop.city %} · {{ shop.city }}{% endif %}
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <a href="/s/{{ shop.slug }}/panier" aria-label="Panier">🧺 <span id="cart-count" class="badge" style="background:#fff;color:var(--brand-dark)">0</span></a>
+    </div>
+  </header>
+  <main class="container page">
+    {% block content %}{% endblock %}
+  </main>
+  <script>window.SHOP_SLUG = {{ shop.slug|tojson }}; window.SHOP_ID = {{ shop.id }};</script>
+  <script src="/static/js/store.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

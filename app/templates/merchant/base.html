@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Espace commerçant{% endblock %} · SmartShop</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <div class="logo" style="display:flex;align-items:center;justify-content:center">🧑‍💼</div>
+      <div>
+        <h1>{{ shop.name if shop else 'SmartShop' }}</h1>
+        <div class="sub">{% if shop %}Espace commerçant{% else %}Tableau de bord{% endif %}</div>
+      </div>
+      <div class="spacer"></div>
+      {% if shop %}<a href="/s/{{ shop.slug }}" target="_blank" title="Voir la boutique">👁️</a>{% endif %}
+      <a href="/app/logout" title="Déconnexion" style="margin-left:12px">⎋</a>
+    </div>
+  </header>
+  <main class="container page">
+    {% if flash %}<div class="flash {{ flash_type or 'ok' }}">{{ flash }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  {% if shop %}
+  <nav class="tabnav">
+    <a href="/app/dashboard" class="{% if active_tab == 'dashboard' %}active{% endif %}"><span class="ic">📊</span>Accueil</a>
+    <a href="/app/products" class="{% if active_tab == 'products' %}active{% endif %}"><span class="ic">📦</span>Produits</a>
+    <a href="/app/orders" class="{% if active_tab == 'orders' %}active{% endif %}"><span class="ic">🧾</span>Commandes</a>
+    <a href="/app/customers" class="{% if active_tab == 'customers' %}active{% endif %}"><span class="ic">👥</span>Clients</a>
+    <a href="/app/settings" class="{% if active_tab == 'settings' %}active{% endif %}"><span class="ic">⚙️</span>Réglages</a>
+  </nav>
+  {% endif %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

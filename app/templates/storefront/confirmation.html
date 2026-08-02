@@ -1,0 +1,29 @@
+{% extends "storefront/base.html" %}
+{% block title %}Commande {{ order.reference }}{% endblock %}
+{% block content %}
+  <div class="card center">
+    <div style="font-size:3rem">✅</div>
+    <h2>Commande enregistrée</h2>
+    <p class="muted">Référence <strong>{{ order.reference }}</strong></p>
+    <p>Envoyez le récapitulatif au commerçant pour confirmer :</p>
+    <a class="btn wa block" href="{{ whatsapp_link }}" target="_blank" rel="noopener">💬 Envoyer sur WhatsApp</a>
+    {% if payment_instructions %}<div class="flash info mt">{{ payment_instructions }}</div>{% endif %}
+    <a class="btn outline block mt" href="/s/{{ shop.slug }}/suivi/{{ order.reference }}">Suivre ma commande</a>
+    <a href="/s/{{ shop.slug }}" class="muted" style="display:inline-block;margin-top:14px">Continuer mes achats</a>
+  </div>
+
+  <div class="card">
+    <h3>Détail</h3>
+    {% for item in order.items %}
+    <div class="list-row">
+      <div class="grow">{{ item.product_name }}{% if item.variant_name %} <span class="muted">· {{ item.variant_name }}</span>{% endif %}<br><span class="muted">x{{ item.quantity }}</span></div>
+      <strong>{{ item.line_total|fcfa }}</strong>
+    </div>
+    {% endfor %}
+    <div class="divider"></div>
+    <div class="list-row"><div class="grow">Sous-total</div><span>{{ order.subtotal|fcfa }}</span></div>
+    {% if order.delivery_fee %}<div class="list-row"><div class="grow">Livraison</div><span>{{ order.delivery_fee|fcfa }}</span></div>{% endif %}
+    <div class="list-row"><div class="grow"><strong>Total</strong></div><strong>{{ order.total|fcfa }}</strong></div>
+  </div>
+  <script>clearCart();</script>
+{% endblock %}
