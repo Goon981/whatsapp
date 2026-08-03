@@ -17,6 +17,7 @@ from ..database import get_db
 from ..deps import SESSION_COOKIE
 from ..models import utcnow
 from ..security import create_token, hash_password, verify_password, verify_token
+from ..services import charts
 from ..services import orders as orders_service
 from ..services import stats as stats_service
 from ..services.orders import OrderError
@@ -186,12 +187,16 @@ def onboarding_submit(
     name: str = Form(...),
     whatsapp_number: str = Form(...),
     sector: str = Form("general"),
+    sector_other: str = Form(""),
     city: str = Form(""),
     db: Session = Depends(get_db),
 ):
     user = _current_user(request, db)
     if user is None:
         return _redirect("/app/login")
+    # Secteur libre saisi via l'option « Autre ».
+    if sector == "autre" and sector_other.strip():
+        sector = sector_other.strip()
     shop = models.Shop(
         owner_id=user.id, name=name, slug=unique_shop_slug(db, name), sector=sector,
         whatsapp_number=whatsapp_number, contact_phone=whatsapp_number, city=city or None,
@@ -233,13 +238,59 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     ctx, redirect = _require_shop(request, db)
     if redirect:
         return redirect
-    _, shop = ctx
+    user, shop = ctx
+    stats = stats_service.shop_dashboard(db, shop.id)
+    recent_orders = (
+        db.query(models.Order)
+        .filter(models.Order.shop_id == shop.id)
+        .order_by(models.Order.created_at.desc())
+        .limit(4)
+        .all()
+    )
     return templates.TemplateResponse(
         request, "merchant/dashboard.html",
         {
-            "shop": shop, "active_tab": "dashboard",
-            "stats": stats_service.shop_dashboard(db, shop.id),
+            "shop": shop, "active_tab": "dashboard", "stats": stats,
+            "first_name": user.full_name.split(" ")[0],
+            "recent_orders": recent_orders,
+            "chart": charts.line_chart(stats["series"]), "on_dark": True,
+            "status_labels": STATUS_LABELS, "status_class": STATUS_CLASS,
             "public_base": settings.PUBLIC_BASE_URL,
+        },
+    )
+
+
+@router.get("/stats", response_class=HTMLResponse)
+def stats_page(request: Request, db: Session = Depends(get_db)):
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    _, shop = ctx
+    stats = stats_service.shop_dashboard(db, shop.id)
+    return templates.TemplateResponse(
+        request, "merchant/stats.html",
+        {
+            "shop": shop, "active_tab": "stats", "stats": stats,
+            "chart": charts.line_chart(stats["series"]),
+        },
+    )
+
+
+@router.get("/profile", response_class=HTMLResponse)
+def profile_page(request: Request, db: Session = Depends(get_db)):
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    user, shop = ctx
+    initials = "".join(part[0] for part in user.full_name.split()[:2]).upper() or "?"
+    plan = shop.subscription.plan.value if shop.subscription else "trial"
+    plan_labels = {"trial": "Essai", "starter": "Starter", "business": "Business", "premium": "Premium"}
+    return templates.TemplateResponse(
+        request, "merchant/profile.html",
+        {
+            "shop": shop, "user": user, "active_tab": "profile",
+            "stats": stats_service.shop_dashboard(db, shop.id),
+            "initials": initials, "plan_label": plan_labels.get(plan, "Pro"),
         },
     )
 
@@ -248,21 +299,38 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 # Produits
 # --------------------------------------------------------------------------- #
 @router.get("/products", response_class=HTMLResponse)
-def products_page(request: Request, db: Session = Depends(get_db)):
+def products_page(
+    request: Request, db: Session = Depends(get_db),
+    q: str | None = None, filter: str | None = None,
+):
     ctx, redirect = _require_shop(request, db)
     if redirect:
         return redirect
     _, shop = ctx
-    products = (
-        db.query(models.Product)
-        .filter(models.Product.shop_id == shop.id, models.Product.is_archived.is_(False))
-        .order_by(models.Product.created_at.desc())
-        .all()
+    base = db.query(models.Product).filter(
+        models.Product.shop_id == shop.id, models.Product.is_archived.is_(False)
     )
+    all_products = base.all()
+    counts = {
+        "all": len(all_products),
+        "in_stock": sum(1 for p in all_products if p.stock > 0),
+        "out": sum(1 for p in all_products if p.stock <= 0),
+    }
+    query = base
+    if q:
+        query = query.filter(models.Product.name.ilike(f"%{q}%"))
+    if filter == "in_stock":
+        query = query.filter(models.Product.stock > 0)
+    elif filter == "out":
+        query = query.filter(models.Product.stock <= 0)
+    products = query.order_by(models.Product.created_at.desc()).all()
     categories = db.query(models.Category).filter(models.Category.shop_id == shop.id).all()
     return templates.TemplateResponse(
         request, "merchant/products.html",
-        {"shop": shop, "active_tab": "products", "products": products, "categories": categories},
+        {
+            "shop": shop, "active_tab": "products", "products": products,
+            "categories": categories, "counts": counts, "q": q, "filter": filter,
+        },
     )
 
 
@@ -331,11 +399,39 @@ def archive_product(product_id: int, request: Request, db: Session = Depends(get
     return _redirect("/app/products")
 
 
+@router.post("/products/{product_id}/toggle", response_class=HTMLResponse)
+def toggle_product(product_id: int, request: Request, db: Session = Depends(get_db)):
+    """Bascule la visibilité du produit en boutique (interrupteur de la maquette)."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    _, shop = ctx
+    product = (
+        db.query(models.Product)
+        .filter(models.Product.id == product_id, models.Product.shop_id == shop.id)
+        .first()
+    )
+    if product:
+        if product.status == models.ProductStatus.HIDDEN:
+            # Réaffiche : disponible si stock, sinon rupture.
+            product.status = (
+                models.ProductStatus.AVAILABLE if product.stock > 0
+                else models.ProductStatus.OUT_OF_STOCK
+            )
+        else:
+            product.status = models.ProductStatus.HIDDEN
+        db.commit()
+    return _redirect("/app/products")
+
+
 # --------------------------------------------------------------------------- #
 # Commandes
 # --------------------------------------------------------------------------- #
 @router.get("/orders", response_class=HTMLResponse)
-def orders_page(request: Request, db: Session = Depends(get_db), status: str | None = None):
+def orders_page(
+    request: Request, db: Session = Depends(get_db),
+    status: str | None = None, q: str | None = None,
+):
     ctx, redirect = _require_shop(request, db)
     if redirect:
         return redirect
@@ -343,13 +439,17 @@ def orders_page(request: Request, db: Session = Depends(get_db), status: str | N
     query = db.query(models.Order).filter(models.Order.shop_id == shop.id)
     if status and status in STATUS_LABELS:
         query = query.filter(models.Order.status == models.OrderStatus(status))
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            models.Order.reference.ilike(like) | models.Order.customer_name.ilike(like)
+        )
     orders = query.order_by(models.Order.created_at.desc()).all()
     return templates.TemplateResponse(
         request, "merchant/orders.html",
         {
-            "shop": shop, "active_tab": "orders", "orders": orders,
+            "shop": shop, "active_tab": "orders", "orders": orders, "q": q,
             "current_status": status, "status_labels": STATUS_LABELS, "status_class": STATUS_CLASS,
-            "statuses": [(k, v) for k, v in STATUS_LABELS.items()],
         },
     )
 

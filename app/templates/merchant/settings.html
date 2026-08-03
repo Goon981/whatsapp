@@ -1,7 +1,9 @@
 {% extends "merchant/base.html" %}
 {% block title %}Réglages{% endblock %}
+{% block heading %}Réglages{% endblock %}
+{% block subheading %}Configuration de la boutique{% endblock %}
 {% block content %}
-  <h1 class="page-title">Réglages de la boutique</h1>
+  <a href="/app/profile" class="muted small" style="display:inline-block;margin:0 2px 8px">← Profil</a>
   <form method="post" action="/app/settings">
     <div class="card">
       <h3>Identité</h3>
@@ -20,7 +22,7 @@
       <div class="checkline mt"><input type="checkbox" id="is_open" name="is_open" {% if shop.is_open %}checked{% endif %}><label for="is_open" style="margin:0">Boutique ouverte</label></div>
       <label for="closed_message">Message hors horaires</label><input id="closed_message" name="closed_message" value="{{ shop.closed_message or '' }}">
     </div>
-    <div class="card">
+    <div class="card" id="paiement">
       <h3>Commande & paiement</h3>
       <label for="min_order_amount">Montant minimum de commande (FCFA)</label><input id="min_order_amount" name="min_order_amount" type="number" min="0" value="{{ shop.min_order_amount }}">
       <div class="checkline mt"><input type="checkbox" id="accept_mtn_momo" name="accept_mtn_momo" {% if shop.accept_mtn_momo %}checked{% endif %}><label for="accept_mtn_momo" style="margin:0">MTN Mobile Money</label></div>
@@ -31,9 +33,9 @@
     <button class="btn block" type="submit">Enregistrer</button>
   </form>
 
-  <div class="card mt">
+  <div class="card mt" id="livraison">
     <h3>Zones de livraison</h3>
-    {% for z in zones %}<div class="list-row"><div class="grow">{{ z.name }}</div><span>{{ z.fee|fcfa }}</span></div>{% else %}<p class="muted">Aucune zone.</p>{% endfor %}
+    {% for z in zones %}<div class="between" style="padding:8px 0;border-bottom:1px solid var(--border)"><div class="grow">{{ z.name }}</div><span class="strong">{{ z.fee|fcfa }}</span></div>{% else %}<p class="muted">Aucune zone.</p>{% endfor %}
     <form method="post" action="/app/delivery-zones" class="mt">
       <div class="row">
         <div><input name="name" placeholder="Ex. Akwa" required></div>

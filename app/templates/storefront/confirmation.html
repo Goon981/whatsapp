@@ -1,29 +1,35 @@
 {% extends "storefront/base.html" %}
 {% block title %}Commande {{ order.reference }}{% endblock %}
+{% block heading %}{{ shop.name }}{% endblock %}
+{% block subheading %}Confirmation{% endblock %}
 {% block content %}
   <div class="card center">
-    <div style="font-size:3rem">✅</div>
-    <h2>Commande enregistrée</h2>
-    <p class="muted">Référence <strong>{{ order.reference }}</strong></p>
-    <p>Envoyez le récapitulatif au commerçant pour confirmer :</p>
-    <a class="btn wa block" href="{{ whatsapp_link }}" target="_blank" rel="noopener">💬 Envoyer sur WhatsApp</a>
+    <div class="confirm-icon"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+    <h2>Commande confirmée !</h2>
+    <p class="muted">Votre commande <strong>{{ order.reference }}</strong> a été enregistrée. Envoyez-la sur WhatsApp pour la confirmer auprès du commerçant.</p>
+
+    <div class="card tight" style="background:var(--brand-050);border:none;margin:14px 0">
+      <div class="between">
+        <div class="left"><div class="muted small">Envoyé à</div><div class="strong">{{ order.customer_phone }}</div></div>
+        <div class="pm-ic pm-cod" style="width:38px;height:38px">💬</div>
+      </div>
+    </div>
+
+    <a class="btn wa block" href="{{ whatsapp_link }}" target="_blank" rel="noopener">💬 Ouvrir WhatsApp</a>
     {% if payment_instructions %}<div class="flash info mt">{{ payment_instructions }}</div>{% endif %}
-    <a class="btn outline block mt" href="/s/{{ shop.slug }}/suivi/{{ order.reference }}">Suivre ma commande</a>
-    <a href="/s/{{ shop.slug }}" class="muted" style="display:inline-block;margin-top:14px">Continuer mes achats</a>
+    <a class="btn outline block mt" href="/s/{{ shop.slug }}/suivi/{{ order.reference }}">Voir ma commande</a>
+    <a href="/s/{{ shop.slug }}" class="muted small" style="display:inline-block;margin-top:14px">Continuer mes achats</a>
   </div>
 
-  <div class="card">
+  <div class="card summary">
     <h3>Détail</h3>
     {% for item in order.items %}
-    <div class="list-row">
-      <div class="grow">{{ item.product_name }}{% if item.variant_name %} <span class="muted">· {{ item.variant_name }}</span>{% endif %}<br><span class="muted">x{{ item.quantity }}</span></div>
-      <strong>{{ item.line_total|fcfa }}</strong>
-    </div>
+    <div class="li"><span>{{ item.product_name }}{% if item.variant_name %} <span class="muted">· {{ item.variant_name }}</span>{% endif %} <span class="muted">×{{ item.quantity }}</span></span><strong>{{ item.line_total|fcfa }}</strong></div>
     {% endfor %}
     <div class="divider"></div>
-    <div class="list-row"><div class="grow">Sous-total</div><span>{{ order.subtotal|fcfa }}</span></div>
-    {% if order.delivery_fee %}<div class="list-row"><div class="grow">Livraison</div><span>{{ order.delivery_fee|fcfa }}</span></div>{% endif %}
-    <div class="list-row"><div class="grow"><strong>Total</strong></div><strong>{{ order.total|fcfa }}</strong></div>
+    <div class="li"><span class="muted">Sous-total</span><span>{{ order.subtotal|fcfa }}</span></div>
+    {% if order.delivery_fee %}<div class="li"><span class="muted">Livraison</span><span>{{ order.delivery_fee|fcfa }}</span></div>{% endif %}
+    <div class="li total"><span>Total</span><span>{{ order.total|fcfa }}</span></div>
   </div>
   <script>clearCart();</script>
 {% endblock %}

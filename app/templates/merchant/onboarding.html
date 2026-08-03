@@ -8,12 +8,27 @@
     <label for="name">Nom de la boutique *</label>
     <input id="name" name="name" required placeholder="Chez Amina">
     <label for="sector">Secteur</label>
-    <select id="sector" name="sector">
+    <select id="sector" name="sector" onchange="toggleOther(this.value)">
       <option value="restaurant">Restaurant</option>
       <option value="mode">Mode / vêtements</option>
       <option value="cosmetique">Cosmétique</option>
+      <option value="alimentation">Alimentation / épicerie</option>
+      <option value="electronique">Électronique</option>
       <option value="general" selected>Commerce général</option>
+      <option value="autre">Autre (préciser)…</option>
     </select>
+    <div id="other-wrap" class="hide">
+      <label for="sector_other">Précisez votre secteur</label>
+      <input id="sector_other" name="sector_other" placeholder="Ex. Fleuriste, artisanat, pharmacie…">
+    </div>
+    <script>
+      function toggleOther(v){
+        var w = document.getElementById('other-wrap');
+        var on = v === 'autre';
+        w.classList.toggle('hide', !on);
+        document.getElementById('sector_other').required = on;
+      }
+    </script>
     <label for="whatsapp_number">Numéro WhatsApp de réception *</label>
     <input id="whatsapp_number" name="whatsapp_number" required placeholder="+2376XXXXXXXX">
     <label for="city">Ville</label>

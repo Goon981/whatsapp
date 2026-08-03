@@ -30,6 +30,29 @@ def _revenue_since(db: Session, shop_id: int, since: datetime) -> int:
     return int(total or 0)
 
 
+def revenue_series(db: Session, shop_id: int, days: int = 14) -> list[int]:
+    """Chiffre d'affaires par jour sur les ``days`` derniers jours (pour la courbe)."""
+    now = datetime.now(timezone.utc)
+    start = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    rows = (
+        db.query(models.Order.created_at, models.Order.total)
+        .filter(
+            models.Order.shop_id == shop_id,
+            models.Order.status.in_(_PAID_OR_ACTIVE),
+            models.Order.created_at >= start,
+        )
+        .all()
+    )
+    buckets = [0] * days
+    for created_at, total in rows:
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        idx = (created_at - start).days
+        if 0 <= idx < days:
+            buckets[idx] += int(total or 0)
+    return buckets
+
+
 def shop_dashboard(db: Session, shop_id: int) -> dict:
     """Renvoie les indicateurs clés du tableau de bord commerçant."""
     now = datetime.now(timezone.utc)
@@ -91,19 +114,71 @@ def shop_dashboard(db: Session, shop_id: int) -> dict:
         .filter(models.Customer.shop_id == shop_id, models.Customer.created_at >= week)
         .count()
     )
+    total_customers = (
+        db.query(models.Customer).filter(models.Customer.shop_id == shop_id).count()
+    )
+    orders_in_progress = base.filter(
+        models.Order.status.in_(
+            [models.OrderStatus.NEW, models.OrderStatus.CONFIRMED,
+             models.OrderStatus.PREPARING, models.OrderStatus.READY, models.OrderStatus.DELIVERING]
+        )
+    ).count()
+    products_in_stock = (
+        db.query(models.Product)
+        .filter(models.Product.shop_id == shop_id, models.Product.is_archived.is_(False))
+        .count()
+    )
+    products_sold = (
+        db.query(func.coalesce(func.sum(models.OrderItem.quantity), 0))
+        .join(models.Order, models.Order.id == models.OrderItem.order_id)
+        .filter(models.OrderItem.shop_id == shop_id, models.Order.status.in_(_PAID_OR_ACTIVE))
+        .scalar()
+    ) or 0
+
+    # Évolution du CA : 30 derniers jours vs 30 jours précédents.
+    prev_month = _revenue_since_between(db, shop_id, now - timedelta(days=60), month)
+    cur_month = _revenue_since(db, shop_id, month)
+    revenue_delta = _pct_delta(cur_month, prev_month)
 
     return {
         "revenue_day": _revenue_since(db, shop_id, day),
         "revenue_week": _revenue_since(db, shop_id, week),
-        "revenue_month": _revenue_since(db, shop_id, month),
+        "revenue_month": cur_month,
+        "revenue_total": int(revenue_all),
+        "revenue_delta": revenue_delta,
         "total_orders": total_orders,
+        "orders_in_progress": orders_in_progress,
+        "products_in_stock": products_in_stock,
+        "products_sold": int(products_sold),
+        "total_customers": total_customers,
         "avg_basket": avg_basket,
         "cancellation_rate": round((cancelled / total_orders * 100), 1) if total_orders else 0.0,
         "pending_payments": pending_payments,
         "top_products": [{"name": name, "quantity": int(qty)} for name, qty in top],
         "low_stock": [{"name": p.name, "stock": p.stock} for p in low_stock],
         "new_customers": new_customers,
+        "series": revenue_series(db, shop_id, 14),
     }
+
+
+def _revenue_since_between(db: Session, shop_id: int, start: datetime, end: datetime) -> int:
+    total = (
+        db.query(func.coalesce(func.sum(models.Order.total), 0))
+        .filter(
+            models.Order.shop_id == shop_id,
+            models.Order.status.in_(_PAID_OR_ACTIVE),
+            models.Order.created_at >= start,
+            models.Order.created_at < end,
+        )
+        .scalar()
+    )
+    return int(total or 0)
+
+
+def _pct_delta(current: int, previous: int) -> float:
+    if previous <= 0:
+        return 100.0 if current > 0 else 0.0
+    return round((current - previous) / previous * 100, 0)
 
 
 def platform_overview(db: Session) -> dict:

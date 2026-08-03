@@ -7,30 +7,39 @@
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
+  {% block header %}
   <header class="topbar">
     <div class="container">
-      <div class="logo" style="display:flex;align-items:center;justify-content:center">🧑‍💼</div>
-      <div>
-        <h1>{{ shop.name if shop else 'SmartShop' }}</h1>
-        <div class="sub">{% if shop %}Espace commerçant{% else %}Tableau de bord{% endif %}</div>
+      <div class="logo-badge">🧑‍💼</div>
+      <div class="grow">
+        <h1>{% block heading %}{{ shop.name if shop else 'SmartShop' }}{% endblock %}</h1>
+        <div class="sub">{% block subheading %}Espace commerçant{% endblock %}</div>
       </div>
-      <div class="spacer"></div>
-      {% if shop %}<a href="/s/{{ shop.slug }}" target="_blank" title="Voir la boutique">👁️</a>{% endif %}
-      <a href="/app/logout" title="Déconnexion" style="margin-left:12px">⎋</a>
+      {% if shop %}<a class="icon-btn" href="/s/{{ shop.slug }}" target="_blank" title="Voir la boutique">
+        <svg class="svg-ic" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </a>{% endif %}
     </div>
   </header>
+  {% endblock %}
+
   <main class="container page">
     {% if flash %}<div class="flash {{ flash_type or 'ok' }}">{{ flash }}</div>{% endif %}
     {% block content %}{% endblock %}
   </main>
+
   {% if shop %}
-  <nav class="tabnav">
-    <a href="/app/dashboard" class="{% if active_tab == 'dashboard' %}active{% endif %}"><span class="ic">📊</span>Accueil</a>
-    <a href="/app/products" class="{% if active_tab == 'products' %}active{% endif %}"><span class="ic">📦</span>Produits</a>
-    <a href="/app/orders" class="{% if active_tab == 'orders' %}active{% endif %}"><span class="ic">🧾</span>Commandes</a>
-    <a href="/app/customers" class="{% if active_tab == 'customers' %}active{% endif %}"><span class="ic">👥</span>Clients</a>
-    <a href="/app/settings" class="{% if active_tab == 'settings' %}active{% endif %}"><span class="ic">⚙️</span>Réglages</a>
-  </nav>
+  <nav class="tabnav"><div class="inner">
+    <a href="/app/dashboard" class="{% if active_tab == 'dashboard' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 10v9h14v-9"/></svg>Accueil</a>
+    <a href="/app/products" class="{% if active_tab == 'products' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Produits</a>
+    <a href="/app/orders" class="{% if active_tab == 'orders' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M6 2h9l3 3v17l-2.5-1.5L13 22l-2.5-1.5L8 22l-2.5-1.5L3 22V4a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Commandes</a>
+    <a href="/app/stats" class="{% if active_tab == 'stats' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Stats</a>
+    <a href="/app/profile" class="{% if active_tab == 'profile' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profil</a>
+  </div></nav>
   {% endif %}
   {% block scripts %}{% endblock %}
 </body>

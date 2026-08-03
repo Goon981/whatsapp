@@ -1,20 +1,21 @@
 {% extends "storefront/base.html" %}
 {% block title %}Suivi {{ order.reference }}{% endblock %}
+{% block heading %}{{ shop.name }}{% endblock %}
+{% block subheading %}Suivi de commande{% endblock %}
 {% block content %}
-  <h1 class="page-title">Suivi de commande</h1>
-  <div class="card">
-    <div class="list-row"><div class="grow">Référence</div><strong>{{ order.reference }}</strong></div>
-    <div class="list-row"><div class="grow">Statut</div><span class="badge {{ status_class }}">{{ status_label }}</span></div>
-    <div class="list-row"><div class="grow">Total</div><strong>{{ order.total|fcfa }}</strong></div>
+  <div class="card summary">
+    <div class="li"><span class="muted">Référence</span><strong>{{ order.reference }}</strong></div>
+    <div class="li"><span class="muted">Statut</span><span class="badge {{ status_class }}">{{ status_label }}</span></div>
+    <div class="li"><span class="muted">Total</span><strong>{{ order.total|fcfa }}</strong></div>
   </div>
   <div class="card">
     <h3>Historique</h3>
+    <div class="summary">
     {% for h in order.history %}
-    <div class="list-row">
-      <div class="grow">{{ status_labels.get(h.status.value, h.status.value) }}{% if h.note %}<br><span class="muted">{{ h.note }}</span>{% endif %}</div>
-      <span class="muted">{{ h.created_at.strftime('%d/%m %H:%M') }}</span>
-    </div>
+      <div class="li"><span>{{ status_labels.get(h.status.value, h.status.value) }}{% if h.note %}<br><span class="muted small">{{ h.note }}</span>{% endif %}</span><span class="muted small">{{ h.created_at.strftime('%d/%m %H:%M') }}</span></div>
     {% endfor %}
+    </div>
   </div>
-  <a href="/s/{{ shop.slug }}" class="muted center" style="display:block">← Retour à la boutique</a>
+  <a href="/s/{{ shop.slug }}" class="btn secondary block">← Retour à la boutique</a>
 {% endblock %}
+{% block scripts %}<script>document.getElementById('cart-count').textContent = (JSON.parse(localStorage.getItem('smartshop_cart_'+window.SHOP_SLUG)||'[]')).reduce((s,i)=>s+i.quantity,0);</script>{% endblock %}

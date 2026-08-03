@@ -1,0 +1,52 @@
+{% extends "merchant/base.html" %}
+{% block title %}Profil{% endblock %}
+
+{% block header %}
+<header class="topbar">
+  <div class="container greet">
+    {% if shop.logo_url %}<img class="avatar" src="{{ shop.logo_url }}" alt="">
+    {% else %}<div class="avatar">{{ initials }}</div>{% endif %}
+    <div class="grow">
+      <div class="name" style="font-size:1.2rem">{{ user.full_name }} <span class="badge pro">{{ plan_label }}</span></div>
+      <div class="tag">{{ shop.name }}{% if shop.city %} · {{ shop.city }}{% endif %}</div>
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+  <div class="tiles two mt">
+    <div class="tile"><div class="k">Commandes</div><div class="v">{{ stats.total_orders }}</div></div>
+    <div class="tile"><div class="k">Produits vendus</div><div class="v">{{ stats.products_sold }}</div></div>
+    <div class="tile"><div class="k">Clients</div><div class="v">{{ stats.total_customers }}</div></div>
+    <div class="tile"><div class="k">Panier moyen</div><div class="v">{{ stats.avg_basket|fcfa_short }}</div></div>
+  </div>
+
+  <div class="menu mb">
+    <a href="/app/settings">
+      <svg class="mi" viewBox="0 0 24 24"><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M16 11h6"/></svg>
+      Informations de la boutique<span class="chev">›</span></a>
+    <a href="/app/settings#paiement">
+      <svg class="mi" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Mes moyens de paiement<span class="chev">›</span></a>
+    <a href="/app/settings#livraison">
+      <svg class="mi" viewBox="0 0 24 24"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+      Adresse & zones de livraison<span class="chev">›</span></a>
+    <a href="/app/customers">
+      <svg class="mi" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/></svg>
+      Mes clients<span class="chev">›</span></a>
+    <a href="/app/settings">
+      <svg class="mi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.8 19.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+      Paramètres de la boutique<span class="chev">›</span></a>
+    <a href="#">
+      <svg class="mi" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/><path d="M12 8v4M12 15h.01"/></svg>
+      Abonnement<span class="chev" style="margin-left:auto">{{ plan_label }} ›</span></a>
+    <a href="/docs" target="_blank">
+      <svg class="mi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3M12 17h.01"/></svg>
+      Aide & support<span class="chev">›</span></a>
+    <a href="/app/logout" class="danger">
+      <svg class="mi" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      Se déconnecter</a>
+  </div>
+  <p class="center muted small">SmartShop WhatsApp · v1.0</p>
+{% endblock %}

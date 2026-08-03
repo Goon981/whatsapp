@@ -6,22 +6,23 @@
   <title>{% block title %}{{ shop.name }}{% endblock %} · SmartShop</title>
   <meta name="description" content="{{ shop.description or shop.name }}">
   <link rel="stylesheet" href="/static/css/app.css">
-  {% if shop %}<style>:root{ --accent: {{ shop.theme_color }}; }</style>{% endif %}
+  {% if shop %}<style>:root{ --brand: {{ shop.theme_color }}; }</style>{% endif %}
 </head>
 <body>
   <header class="topbar">
     <div class="container">
-      {% if shop.logo_url %}<img class="logo" src="{{ shop.logo_url }}" alt="">
-      {% else %}<div class="logo" style="display:flex;align-items:center;justify-content:center;">🛍️</div>{% endif %}
-      <div>
-        <h1><a href="/s/{{ shop.slug }}">{{ shop.name }}</a></h1>
-        <div class="sub">
-          {% if shop.is_open %}🟢 Ouvert{% else %}🔴 Fermé{% endif %}
-          {% if shop.city %} · {{ shop.city }}{% endif %}
-        </div>
+      {% if back_url %}<a class="icon-btn" href="{{ back_url }}" aria-label="Retour">
+        <svg class="svg-ic" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></a>
+      {% elif shop.logo_url %}<img class="logo-badge" src="{{ shop.logo_url }}" alt="">
+      {% else %}<div class="logo-badge">🛍️</div>{% endif %}
+      <div class="grow">
+        <h1><a href="/s/{{ shop.slug }}">{% block heading %}{{ shop.name }}{% endblock %}</a></h1>
+        <div class="sub">{% block subheading %}{% if shop.is_open %}🟢 Ouvert{% else %}🔴 Fermé{% endif %}{% if shop.city %} · {{ shop.city }}{% endif %}{% endblock %}</div>
       </div>
-      <div class="spacer"></div>
-      <a href="/s/{{ shop.slug }}/panier" aria-label="Panier">🧺 <span id="cart-count" class="badge" style="background:#fff;color:var(--brand-dark)">0</span></a>
+      <a class="icon-btn" href="/s/{{ shop.slug }}/panier" aria-label="Panier">
+        <svg class="svg-ic" viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6 5 3H2"/></svg>
+        <span class="count" id="cart-count">0</span>
+      </a>
     </div>
   </header>
   <main class="container page">

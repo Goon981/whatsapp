@@ -1,40 +1,58 @@
 {% extends "merchant/base.html" %}
 {% block title %}Tableau de bord{% endblock %}
-{% block content %}
-  <div class="card">
-    <div class="row">
-      <div><strong>Lien de la boutique</strong><br><a href="/s/{{ shop.slug }}" target="_blank">{{ public_base }}/s/{{ shop.slug }}</a></div>
+
+{% block header %}
+<header class="topbar">
+  <div class="container greet">
+    <div class="grow">
+      <div class="hi">Bonjour,</div>
+      <div class="name">{{ first_name }} 👋</div>
+      <div class="tag">Tableau de bord · {{ shop.name }}</div>
     </div>
-    <div class="mt"><a class="btn wa sm" href="/s/{{ shop.slug }}" target="_blank">Ouvrir la boutique</a>
-      <button class="btn secondary sm" onclick="navigator.clipboard.writeText('{{ public_base }}/s/{{ shop.slug }}');this.textContent='Copié ✓'">Copier le lien</button></div>
+    <a class="icon-btn" href="/app/orders">
+      <svg class="svg-ic" viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6 5 3H2"/></svg>
+      {% if stats.orders_in_progress %}<span class="count">{{ stats.orders_in_progress }}</span>{% endif %}
+    </a>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+  <div class="revenue">
+    <div class="between">
+      <div class="k">Chiffre d'affaires</div>
+      <span class="delta">{% if stats.revenue_delta >= 0 %}▲ +{{ stats.revenue_delta|round|int }}%{% else %}▼ {{ stats.revenue_delta|round|int }}%{% endif %} ce mois</span>
+    </div>
+    <div class="v">{{ stats.revenue_month|fcfa_short }}</div>
+    <div class="chart">{% include "merchant/_chart.html" %}</div>
   </div>
 
-  <div class="stats mb">
-    <div class="stat"><div class="k">CA aujourd'hui</div><div class="v">{{ stats.revenue_day|fcfa }}</div></div>
-    <div class="stat"><div class="k">CA 7 jours</div><div class="v">{{ stats.revenue_week|fcfa }}</div></div>
-    <div class="stat"><div class="k">CA 30 jours</div><div class="v">{{ stats.revenue_month|fcfa }}</div></div>
-    <div class="stat"><div class="k">Commandes</div><div class="v">{{ stats.total_orders }}</div></div>
-    <div class="stat"><div class="k">Panier moyen</div><div class="v">{{ stats.avg_basket|fcfa }}</div></div>
-    <div class="stat"><div class="k">Taux annulation</div><div class="v">{{ stats.cancellation_rate }}%</div></div>
-    <div class="stat"><div class="k">Paiements en attente</div><div class="v">{{ stats.pending_payments }}</div></div>
-    <div class="stat"><div class="k">Nouveaux clients (7j)</div><div class="v">{{ stats.new_customers }}</div></div>
+  <div class="tiles">
+    <div class="tile"><div class="k">Commandes<br>en cours</div><div class="v">{{ stats.orders_in_progress }}</div></div>
+    <div class="tile"><div class="k">Produits<br>en stock</div><div class="v">{{ stats.products_in_stock }}</div></div>
+    <div class="tile"><div class="k">Clients<br>total</div><div class="v">{{ stats.total_customers }}</div></div>
   </div>
 
-  <div class="card">
-    <h3>🏆 Meilleurs produits</h3>
-    {% if stats.top_products %}
-      {% for p in stats.top_products %}
-      <div class="list-row"><div class="grow">{{ p.name }}</div><strong>{{ p.quantity }} vendus</strong></div>
-      {% endfor %}
-    {% else %}<p class="muted">Pas encore de ventes.</p>{% endif %}
+  <div class="section-title"><h3>Commandes récentes</h3><a href="/app/orders">Voir tout</a></div>
+  {% if recent_orders %}
+  <div class="list mb">
+    {% for o in recent_orders %}
+    <a class="row-item" href="/app/orders/{{ o.id }}">
+      <div class="th">🧾</div>
+      <div class="grow">
+        <div class="t1">Commande {{ o.reference }}</div>
+        <div class="t2">{{ o.created_at.strftime('%d/%m/%Y') }} · {{ o.customer_name }}</div>
+      </div>
+      <div class="right">
+        <div class="t1">{{ o.total|fcfa }}</div>
+        <span class="badge {{ status_class.get(o.status.value,'gray') }}">{{ status_labels.get(o.status.value) }}</span>
+      </div>
+    </a>
+    {% endfor %}
   </div>
+  {% else %}
+  <div class="card center muted mb">Aucune commande pour l'instant.</div>
+  {% endif %}
 
-  <div class="card">
-    <h3>⚠️ Stock bientôt épuisé</h3>
-    {% if stats.low_stock %}
-      {% for p in stats.low_stock %}
-      <div class="list-row"><div class="grow">{{ p.name }}</div><span class="badge amber">{{ p.stock }} restants</span></div>
-      {% endfor %}
-    {% else %}<p class="muted">Tous les stocks sont confortables.</p>{% endif %}
-  </div>
+  <a class="btn block full-dark" href="/app/products">＋ Ajouter un produit</a>
 {% endblock %}

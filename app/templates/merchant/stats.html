@@ -1,0 +1,53 @@
+{% extends "merchant/base.html" %}
+{% block title %}Statistiques{% endblock %}
+{% block heading %}Statistiques{% endblock %}
+{% block subheading %}Suivi des ventes{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="between mb">
+      <div>
+        <div class="muted small">Chiffre d'affaires (30 j)</div>
+        <div style="font-size:1.6rem;font-weight:800">{{ stats.revenue_month|fcfa_short }}</div>
+        <div class="{% if stats.revenue_delta >= 0 %}chip-pos{% else %}chip-neg{% endif %}" style="font-size:.82rem;font-weight:700">
+          {% if stats.revenue_delta >= 0 %}▲ +{{ stats.revenue_delta|round|int }}%{% else %}▼ {{ stats.revenue_delta|round|int }}%{% endif %} vs période précédente
+        </div>
+      </div>
+    </div>
+    <div class="chart">{% set on_dark = false %}{% include "merchant/_chart.html" %}</div>
+    <div class="between muted small mt8"><span>14 derniers jours</span><span>Aujourd'hui</span></div>
+  </div>
+
+  <div class="section-title"><h3>Aperçu</h3></div>
+  <div class="tiles two">
+    <div class="tile"><div class="k">Commandes</div><div class="v">{{ stats.total_orders }}</div></div>
+    <div class="tile"><div class="k">Produits vendus</div><div class="v">{{ stats.products_sold }}</div></div>
+    <div class="tile"><div class="k">Clients</div><div class="v">{{ stats.total_customers }}</div></div>
+    <div class="tile"><div class="k">Panier moyen</div><div class="v">{{ stats.avg_basket|fcfa_short }}</div></div>
+  </div>
+
+  <div class="tiles two">
+    <div class="tile"><div class="k">CA aujourd'hui</div><div class="v">{{ stats.revenue_day|fcfa_short }}</div></div>
+    <div class="tile"><div class="k">CA 7 jours</div><div class="v">{{ stats.revenue_week|fcfa_short }}</div></div>
+    <div class="tile"><div class="k">Taux annulation</div><div class="v">{{ stats.cancellation_rate }}%</div></div>
+    <div class="tile"><div class="k">Paiements en attente</div><div class="v">{{ stats.pending_payments }}</div></div>
+  </div>
+
+  <div class="section-title"><h3>🏆 Meilleurs produits</h3></div>
+  <div class="list mb">
+    {% for p in stats.top_products %}
+    <div class="row-item"><div class="th">🥇</div><div class="grow"><div class="t1">{{ p.name }}</div></div><span class="badge green">{{ p.quantity }} vendus</span></div>
+    {% else %}
+    <div class="row-item muted">Pas encore de ventes.</div>
+    {% endfor %}
+  </div>
+
+  <div class="section-title"><h3>⚠️ Stock bientôt épuisé</h3></div>
+  <div class="list">
+    {% for p in stats.low_stock %}
+    <div class="row-item"><div class="th">📦</div><div class="grow"><div class="t1">{{ p.name }}</div></div><span class="badge amber">{{ p.stock }} restants</span></div>
+    {% else %}
+    <div class="row-item muted">Tous les stocks sont confortables.</div>
+    {% endfor %}
+  </div>
+{% endblock %}

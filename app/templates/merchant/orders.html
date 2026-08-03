@@ -1,26 +1,35 @@
 {% extends "merchant/base.html" %}
 {% block title %}Commandes{% endblock %}
+{% block heading %}Commandes{% endblock %}
+{% block subheading %}{{ orders|length }} affichée(s){% endblock %}
+
 {% block content %}
-  <h1 class="page-title">Commandes</h1>
-  <div class="pill-tabs">
+  <form class="search" method="get" action="/app/orders">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+    <input type="search" name="q" value="{{ q or '' }}" placeholder="Rechercher une commande…">
+  </form>
+
+  <div class="pills">
     <a href="/app/orders" class="{% if not current_status %}active{% endif %}">Toutes</a>
-    {% for key, label in statuses %}
-      <a href="/app/orders?status={{ key }}" class="{% if current_status == key %}active{% endif %}">{{ label }}</a>
-    {% endfor %}
+    <a href="/app/orders?status=new" class="{% if current_status=='new' %}active{% endif %}">En attente</a>
+    <a href="/app/orders?status=confirmed" class="{% if current_status=='confirmed' %}active{% endif %}">Confirmées</a>
+    <a href="/app/orders?status=delivered" class="{% if current_status=='delivered' %}active{% endif %}">Livrées</a>
+    <a href="/app/orders?status=cancelled" class="{% if current_status=='cancelled' %}active{% endif %}">Annulées</a>
   </div>
+
   {% if not orders %}
     <div class="card center muted">Aucune commande.</div>
   {% else %}
   {% for o in orders %}
-  <a class="card" href="/app/orders/{{ o.id }}" style="display:block">
-    <div class="list-row">
-      <div class="grow">
-        <strong>{{ o.reference }}</strong> · {{ o.customer_name }}<br>
-        <span class="muted">{{ o.created_at.strftime('%d/%m %H:%M') }} · {{ o.items|length }} article(s)</span>
+  <a class="card tight" href="/app/orders/{{ o.id }}" style="display:block">
+    <div class="between">
+      <div>
+        <div class="strong">{{ o.reference }}</div>
+        <div class="muted small">{{ o.created_at.strftime('%d/%m/%Y · %H:%M') }} · {{ o.customer_name }}</div>
       </div>
       <div class="right">
-        <strong>{{ o.total|fcfa }}</strong><br>
-        <span class="badge {{ status_class.get(o.status.value, 'gray') }}">{{ status_labels.get(o.status.value) }}</span>
+        <div class="strong">{{ o.total|fcfa }}</div>
+        <span class="badge {{ status_class.get(o.status.value,'gray') }}">{{ status_labels.get(o.status.value) }}</span>
       </div>
     </div>
   </a>

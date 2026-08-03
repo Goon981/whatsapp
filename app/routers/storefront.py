@@ -85,14 +85,17 @@ def product_page(slug: str, product_id: int, request: Request, db: Session = Dep
     if product is None or product.status == models.ProductStatus.HIDDEN:
         raise HTTPException(404, "Produit introuvable.")
     return templates.TemplateResponse(
-        request, "storefront/product.html", {"shop": shop, "product": product}
+        request, "storefront/product.html",
+        {"shop": shop, "product": product, "back_url": f"/s/{shop.slug}"},
     )
 
 
 @router.get("/s/{slug}/panier", response_class=HTMLResponse)
 def cart_page(slug: str, request: Request, db: Session = Depends(get_db)):
     shop = _get_public_shop(db, slug)
-    return templates.TemplateResponse(request, "storefront/cart.html", {"shop": shop})
+    return templates.TemplateResponse(
+        request, "storefront/cart.html", {"shop": shop, "back_url": f"/s/{shop.slug}"}
+    )
 
 
 @router.get("/s/{slug}/commande", response_class=HTMLResponse)
@@ -104,7 +107,8 @@ def checkout_page(slug: str, request: Request, db: Session = Depends(get_db)):
         .all()
     )
     return templates.TemplateResponse(
-        request, "storefront/checkout.html", {"shop": shop, "zones": zones}
+        request, "storefront/checkout.html",
+        {"shop": shop, "zones": zones, "back_url": f"/s/{shop.slug}/panier"},
     )
 
 

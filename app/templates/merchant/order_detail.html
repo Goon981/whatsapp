@@ -1,37 +1,42 @@
 {% extends "merchant/base.html" %}
 {% block title %}Commande {{ order.reference }}{% endblock %}
+{% block heading %}{{ order.reference }}{% endblock %}
+{% block subheading %}Détail de la commande{% endblock %}
 {% block content %}
-  <a href="/app/orders" class="muted">← Commandes</a>
-  <h1 class="page-title">{{ order.reference }}</h1>
+  <a href="/app/orders" class="muted small" style="display:inline-block;margin:0 2px 10px">← Commandes</a>
 
   <div class="card">
-    <div class="list-row"><div class="grow">Statut</div><span class="badge {{ status_class.get(order.status.value,'gray') }}">{{ status_labels.get(order.status.value) }}</span></div>
-    <div class="list-row"><div class="grow">Client</div><span>{{ order.customer_name }}</span></div>
-    <div class="list-row"><div class="grow">Téléphone</div><a href="https://wa.me/{{ order.customer_phone|replace('+','')|replace(' ','') }}">{{ order.customer_phone }}</a></div>
-    <div class="list-row"><div class="grow">Livraison</div><span>{% if order.is_pickup %}Retrait{% else %}{{ [order.delivery_city, order.delivery_district, order.delivery_details]|select|join(', ') or 'À préciser' }}{% endif %}</span></div>
-    <div class="list-row"><div class="grow">Paiement</div><span>{{ payment_label }}{% if order.is_paid %} <span class="badge green">Payé</span>{% endif %}</span></div>
+    <div class="summary">
+      <div class="li"><span class="muted">Statut</span><span class="badge {{ status_class.get(order.status.value,'gray') }}">{{ status_labels.get(order.status.value) }}</span></div>
+      <div class="li"><span class="muted">Client</span><span class="strong">{{ order.customer_name }}</span></div>
+      <div class="li"><span class="muted">Téléphone</span><a href="https://wa.me/{{ order.customer_phone|replace('+','')|replace(' ','') }}">{{ order.customer_phone }}</a></div>
+      <div class="li"><span class="muted">Livraison</span><span>{% if order.is_pickup %}Retrait{% else %}{{ [order.delivery_city, order.delivery_district, order.delivery_details]|select|join(', ') or 'À préciser' }}{% endif %}</span></div>
+      <div class="li"><span class="muted">Paiement</span><span>{{ payment_label }}{% if order.is_paid %} <span class="badge green">Payé</span>{% endif %}</span></div>
+    </div>
   </div>
 
   <div class="card">
     <h3>Articles</h3>
-    {% for item in order.items %}
-    <div class="list-row"><div class="grow">{{ item.product_name }}{% if item.variant_name %} · {{ item.variant_name }}{% endif %}<br><span class="muted">{{ item.unit_price|fcfa }} × {{ item.quantity }}</span></div><strong>{{ item.line_total|fcfa }}</strong></div>
-    {% endfor %}
-    <div class="divider"></div>
-    <div class="list-row"><div class="grow">Sous-total</div><span>{{ order.subtotal|fcfa }}</span></div>
-    {% if order.delivery_fee %}<div class="list-row"><div class="grow">Livraison</div><span>{{ order.delivery_fee|fcfa }}</span></div>{% endif %}
-    {% if order.discount %}<div class="list-row"><div class="grow">Remise</div><span>-{{ order.discount|fcfa }}</span></div>{% endif %}
-    <div class="list-row"><div class="grow"><strong>Total</strong></div><strong>{{ order.total|fcfa }}</strong></div>
+    <div class="summary">
+      {% for item in order.items %}
+      <div class="li"><span>{{ item.product_name }}{% if item.variant_name %} · {{ item.variant_name }}{% endif %} <span class="muted">×{{ item.quantity }}</span></span><span class="strong">{{ item.line_total|fcfa }}</span></div>
+      {% endfor %}
+      <div class="divider"></div>
+      <div class="li"><span class="muted">Sous-total</span><span>{{ order.subtotal|fcfa }}</span></div>
+      {% if order.delivery_fee %}<div class="li"><span class="muted">Livraison</span><span>{{ order.delivery_fee|fcfa }}</span></div>{% endif %}
+      {% if order.discount %}<div class="li"><span class="muted">Remise</span><span>-{{ order.discount|fcfa }}</span></div>{% endif %}
+      <div class="li total"><span>Total</span><span>{{ order.total|fcfa }}</span></div>
+    </div>
   </div>
 
   {% if next_statuses %}
   <div class="card">
     <h3>Mettre à jour le statut</h3>
-    <div class="row">
+    <div class="row wrap">
     {% for key, label in next_statuses %}
-      <form method="post" action="/app/orders/{{ order.id }}/status">
+      <form method="post" action="/app/orders/{{ order.id }}/status" class="grow">
         <input type="hidden" name="status" value="{{ key }}">
-        <button class="btn {% if key == 'cancelled' %}danger{% else %}block{% endif %} sm" type="submit">{{ label }}</button>
+        <button class="btn {% if key == 'cancelled' %}danger{% else %}secondary{% endif %} sm block" type="submit">{{ label }}</button>
       </form>
     {% endfor %}
     </div>
@@ -42,8 +47,10 @@
 
   <div class="card mt">
     <h3>Historique</h3>
+    <div class="summary">
     {% for h in order.history %}
-    <div class="list-row"><div class="grow">{{ status_labels.get(h.status.value) }}{% if h.note %} <span class="muted">— {{ h.note }}</span>{% endif %}</div><span class="muted">{{ h.created_at.strftime('%d/%m %H:%M') }}</span></div>
+      <div class="li"><span>{{ status_labels.get(h.status.value) }}{% if h.note %} <span class="muted">— {{ h.note }}</span>{% endif %}</span><span class="muted small">{{ h.created_at.strftime('%d/%m %H:%M') }}</span></div>
     {% endfor %}
+    </div>
   </div>
 {% endblock %}

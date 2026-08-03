@@ -1,8 +1,9 @@
 {% extends "storefront/base.html" %}
-{% block title %}Commande{% endblock %}
+{% block title %}Paiement{% endblock %}
+{% block heading %}Paiement{% endblock %}
+{% block subheading %}Finaliser la commande{% endblock %}
 {% block content %}
-  <h1 class="page-title">Finaliser la commande</h1>
-  <div id="checkout-error" class="flash err" hidden></div>
+  <div id="checkout-error" class="flash err hide"></div>
 
   <form id="checkout-form">
     <div class="card">
@@ -37,20 +38,35 @@
     </div>
 
     <div class="card">
-      <h3>Paiement</h3>
+      <h3>Choisissez votre moyen de paiement</h3>
       {% if shop.accept_mtn_momo %}
-      <div class="checkline"><input type="radio" name="payment_method" value="mtn_momo" id="pm_mtn"><label for="pm_mtn" style="margin:0">📱 MTN Mobile Money</label></div>{% endif %}
+      <label class="pay-opt active" id="opt-mtn" onclick="pickPay('mtn_momo')">
+        <div class="pm-ic pm-mtn">MoMo</div>
+        <div><div class="pm-t1">MTN Mobile Money</div><div class="pm-t2">Payer avec MTN MoMo</div></div>
+        <span class="radio"></span>
+        <input type="radio" name="payment_method" value="mtn_momo" class="hide" checked>
+      </label>{% endif %}
       {% if shop.accept_orange_money %}
-      <div class="checkline mt"><input type="radio" name="payment_method" value="orange_money" id="pm_om"><label for="pm_om" style="margin:0">📱 Orange Money</label></div>{% endif %}
+      <label class="pay-opt" id="opt-om" onclick="pickPay('orange_money')">
+        <div class="pm-ic pm-om">OM</div>
+        <div><div class="pm-t1">Orange Money</div><div class="pm-t2">Payer avec Orange Money</div></div>
+        <span class="radio"></span>
+        <input type="radio" name="payment_method" value="orange_money" class="hide">
+      </label>{% endif %}
       {% if shop.accept_cash_on_delivery %}
-      <div class="checkline mt"><input type="radio" name="payment_method" value="cash_on_delivery" id="pm_cod" checked><label for="pm_cod" style="margin:0">💵 Paiement à la livraison</label></div>{% endif %}
+      <label class="pay-opt" id="opt-cod" onclick="pickPay('cash_on_delivery')">
+        <div class="pm-ic pm-cod">💵</div>
+        <div><div class="pm-t1">Paiement à la livraison</div><div class="pm-t2">Payez en espèces à la réception</div></div>
+        <span class="radio"></span>
+        <input type="radio" name="payment_method" value="cash_on_delivery" class="hide">
+      </label>{% endif %}
     </div>
 
-    <div class="card">
-      <h3>Récapitulatif</h3>
+    <div class="card summary">
+      <h3>Résumé de la commande</h3>
       <div id="checkout-items"></div>
       <div class="divider"></div>
-      <div class="list-row"><div class="grow">Sous-total (indicatif)</div><strong id="co-subtotal">0 FCFA</strong></div>
+      <div class="li"><span class="muted">Sous-total (indicatif)</span><strong id="co-subtotal">0 FCFA</strong></div>
       <label for="customer_note">Note pour le commerçant</label>
       <textarea id="customer_note" name="customer_note" placeholder="Optionnel"></textarea>
       <div class="checkline mt">
@@ -59,10 +75,18 @@
       </div>
     </div>
 
-    <button class="btn block" type="submit" id="submit-btn">Valider et envoyer sur WhatsApp</button>
-    <p class="hint center mt">Le total définitif est recalculé par le serveur avant validation.</p>
+    <button class="btn block" type="submit" id="submit-btn">🔒 Valider et envoyer sur WhatsApp</button>
+    <p class="hint center mt">Paiement 100% sécurisé · total recalculé par le serveur.</p>
   </form>
 {% endblock %}
 {% block scripts %}
-<script>initCheckout();</script>
+<script>
+  function pickPay(v){
+    document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('active'));
+    var map = {mtn_momo:'opt-mtn', orange_money:'opt-om', cash_on_delivery:'opt-cod'};
+    var el = document.getElementById(map[v]);
+    if (el){ el.classList.add('active'); el.querySelector('input').checked = true; }
+  }
+  initCheckout();
+</script>
 {% endblock %}

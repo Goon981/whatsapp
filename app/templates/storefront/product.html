@@ -1,41 +1,54 @@
 {% extends "storefront/base.html" %}
 {% block title %}{{ product.name }}{% endblock %}
+{% block heading %}{{ shop.name }}{% endblock %}
 {% block content %}
-  <a href="/s/{{ shop.slug }}" class="muted">← Retour à la boutique</a>
-  <div class="card mt">
-    <div class="thumb" style="aspect-ratio:16/10;background:#eef3f2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:3rem;overflow:hidden">
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="thumb" style="aspect-ratio:16/12;background:#eef3f1;display:flex;align-items:center;justify-content:center;font-size:3.4rem">
       {% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover">{% else %}🛒{% endif %}
     </div>
-    <h2 class="mt">{{ product.name }}</h2>
-    <div class="price" style="font-size:1.3rem;font-weight:800;color:var(--brand-dark)">
-      <span id="unit-price" data-base="{{ product.effective_price }}">{{ product.effective_price|fcfa }}</span>
-      {% if product.promo_price is not none and product.promo_price < product.price %}<span class="old">{{ product.price|fcfa }}</span>{% endif %}
+    <div style="padding:16px">
+      <h2 style="margin-bottom:6px">{{ product.name }}</h2>
+      <div class="between">
+        <div class="price" style="font-size:1.5rem;font-weight:800;color:var(--text)">
+          <span id="unit-price" data-base="{{ product.effective_price }}">{{ product.effective_price|fcfa }}</span>
+          {% if product.promo_price is not none and product.promo_price < product.price %}<span class="old">{{ product.price|fcfa }}</span>{% endif %}
+        </div>
+        {% if product.status.value == 'available' %}<span class="badge green">En stock</span>
+        {% elif product.status.value == 'preorder' %}<span class="badge amber">Précommande</span>
+        {% elif product.status.value == 'out_of_stock' %}<span class="badge red">Rupture</span>{% endif %}
+      </div>
+
+      {% if product.description %}<p class="muted mt8">{{ product.description }}</p>{% endif %}
+
+      {% if product.variants %}
+      <label>Choisir une option</label>
+      <input type="hidden" id="variant"
+             value="{{ product.variants[0].id }}"
+             data-name="{{ product.variants[0].name }}"
+             data-price="{{ product.variants[0].price if product.variants[0].price is not none else product.effective_price }}">
+      <div class="chips" id="variant-chips">
+        {% for v in product.variants if v.is_active %}
+        <button type="button" class="chip-opt {% if loop.first %}active{% endif %}"
+                data-id="{{ v.id }}" data-name="{{ v.name }}"
+                data-price="{{ v.price if v.price is not none else product.effective_price }}"
+                onclick="selectVariant(this)">{{ v.name }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <label>Quantité</label>
+      <div class="qty">
+        <button type="button" onclick="stepQty(-1)">−</button>
+        <input id="qty" type="number" value="1" min="1">
+        <button type="button" onclick="stepQty(1)">＋</button>
+      </div>
+
+      {% if product.status.value in ['out_of_stock', 'hidden'] %}
+        <div class="flash err mt">Ce produit n'est pas disponible actuellement.</div>
+      {% else %}
+        <button class="btn block mt" onclick="addCurrentProduct()">Ajouter au panier</button>
+      {% endif %}
     </div>
-    {% if product.description %}<p class="muted mt">{{ product.description }}</p>{% endif %}
-
-    {% if product.variants %}
-    <label for="variant">Choisir une option</label>
-    <select id="variant">
-      {% for v in product.variants if v.is_active %}
-      <option value="{{ v.id }}" data-name="{{ v.name }}" data-price="{{ v.price if v.price is not none else product.effective_price }}" data-stock="{{ v.stock }}">
-        {{ v.name }}{% if v.price is not none %} — {{ v.price|fcfa }}{% endif %}
-      </option>
-      {% endfor %}
-    </select>
-    {% endif %}
-
-    <label>Quantité</label>
-    <div class="qty">
-      <button type="button" onclick="stepQty(-1)">−</button>
-      <input id="qty" type="number" value="1" min="1" style="width:70px;text-align:center">
-      <button type="button" onclick="stepQty(1)">+</button>
-    </div>
-
-    {% if product.status.value in ['out_of_stock', 'hidden'] %}
-      <div class="flash err mt">Ce produit n'est pas disponible actuellement.</div>
-    {% else %}
-    <button class="btn block mt" onclick="addCurrentProduct()">Ajouter au panier</button>
-    {% endif %}
   </div>
 
   <script>
@@ -45,5 +58,15 @@
       image: {{ (product.image_url or '')|tojson }},
       base_price: {{ product.effective_price }}
     };
+    function selectVariant(el){
+      document.querySelectorAll('#variant-chips .chip-opt').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      var input = document.getElementById('variant');
+      input.value = el.dataset.id;
+      input.dataset.name = el.dataset.name;
+      input.dataset.price = el.dataset.price;
+      document.getElementById('unit-price').textContent =
+        parseInt(el.dataset.price, 10).toLocaleString('fr-FR').replace(/,/g,' ') + ' FCFA';
+    }
   </script>
 {% endblock %}

@@ -1,12 +1,12 @@
 {% extends "admin/base.html" %}
 {% block content %}
-  <div class="stats mb">
-    <div class="stat"><div class="k">Boutiques actives</div><div class="v">{{ o.active_shops }}</div></div>
-    <div class="stat"><div class="k">Boutiques suspendues</div><div class="v">{{ o.suspended_shops }}</div></div>
-    <div class="stat"><div class="k">Utilisateurs</div><div class="v">{{ o.total_users }}</div></div>
-    <div class="stat"><div class="k">Commandes totales</div><div class="v">{{ o.total_orders }}</div></div>
-    <div class="stat"><div class="k">Volume d'affaires</div><div class="v">{{ o.gmv|fcfa }}</div></div>
-    <div class="stat"><div class="k">Paiements échoués</div><div class="v">{{ o.failed_payments }}</div></div>
+  <div class="tiles two mb">
+    <div class="tile"><div class="k">Boutiques actives</div><div class="v">{{ o.active_shops }}</div></div>
+    <div class="tile"><div class="k">Boutiques suspendues</div><div class="v">{{ o.suspended_shops }}</div></div>
+    <div class="tile"><div class="k">Utilisateurs</div><div class="v">{{ o.total_users }}</div></div>
+    <div class="tile"><div class="k">Commandes totales</div><div class="v">{{ o.total_orders }}</div></div>
+    <div class="tile"><div class="k">Volume d'affaires</div><div class="v">{{ o.gmv|fcfa_short }}</div></div>
+    <div class="tile"><div class="k">Paiements échoués</div><div class="v">{{ o.failed_payments }}</div></div>
   </div>
   <div class="card">
     <h3>Raccourcis</h3>
