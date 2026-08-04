@@ -441,8 +441,35 @@ class Subscription(Base):
     current_period_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     product_limit: Mapped[int] = mapped_column(Integer, default=20)
     monthly_order_limit: Mapped[int] = mapped_column(Integer, default=50)
+    # Facturation de l'abonnement SaaS (celui encaissé par la plateforme).
+    amount: Mapped[int] = mapped_column(Integer, default=0)  # FCFA / mois
+    grace_days: Mapped[int] = mapped_column(Integer, default=3)  # délai avant suspension
+    auto_suspend: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_payment_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Rappelle si la boutique a été suspendue pour impayé (pour réactivation auto).
+    suspended_for_nonpayment: Mapped[bool] = mapped_column(Boolean, default=False)
 
     shop: Mapped["Shop"] = relationship(back_populates="subscription")
+    payments: Mapped[list["SubscriptionPayment"]] = relationship(back_populates="subscription")
+
+
+class SubscriptionPayment(Base):
+    """Historique des encaissements d'abonnement (versés à la plateforme)."""
+
+    __tablename__ = "subscription_payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    shop_id: Mapped[int] = mapped_column(ForeignKey("shops.id"), index=True)
+    subscription_id: Mapped[int] = mapped_column(ForeignKey("subscriptions.id"), index=True)
+    amount: Mapped[int] = mapped_column(Integer)  # FCFA
+    method: Mapped[str] = mapped_column(String(40), default="manual")
+    reference: Mapped[str] = mapped_column(String(80))
+    period_start: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    period_end: Mapped[datetime] = mapped_column(DateTime)
+    recorded_by: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    subscription: Mapped["Subscription"] = relationship(back_populates="payments")
 
 
 # --------------------------------------------------------------------------- #

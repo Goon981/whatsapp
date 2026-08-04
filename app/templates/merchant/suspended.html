@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compte suspendu · SmartShop</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="topbar"><div class="container"><div class="logo-badge">🛍️</div><h1>SmartShop WhatsApp</h1></div></header>
+  <main class="container page">
+    <div class="card center">
+      <div style="font-size:3rem">⛔</div>
+      <h2>Boutique désactivée</h2>
+      <p class="muted">
+        {% if reason == 'Abonnement impayé' %}
+          Votre abonnement est arrivé à échéance. Votre boutique est temporairement
+          désactivée et n'est plus visible par vos clients.
+        {% else %}
+          Votre boutique est temporairement désactivée{% if reason %} ({{ reason }}){% endif %}.
+        {% endif %}
+      </p>
+      <p>Régularisez votre abonnement pour la réactiver immédiatement. Vos données
+      (produits, commandes, clients) sont conservées.</p>
+      {% if shop.subscription and shop.subscription.amount %}
+      <div class="card tight" style="background:var(--brand-050);border:none;margin:14px 0">
+        <div class="between"><span class="muted">Montant dû</span><strong>{{ shop.subscription.amount|fcfa }} / mois</strong></div>
+      </div>
+      {% endif %}
+      <a class="btn wa block" href="https://wa.me/{{ support_number }}?text=Bonjour,%20je%20souhaite%20réactiver%20ma%20boutique%20{{ shop.name|urlencode }}">💬 Contacter le support</a>
+      <a class="btn outline block mt" href="/app/logout">Se déconnecter</a>
+    </div>
+  </main>
+</body>
+</html>

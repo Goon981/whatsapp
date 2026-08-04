@@ -220,13 +220,23 @@ def onboarding_submit(
 # Dépendance de page protégée
 # --------------------------------------------------------------------------- #
 def _require_shop(request: Request, db: Session):
-    """Retourne (user, shop) ou une RedirectResponse."""
+    """Retourne (user, shop) ou une réponse de redirection/blocage.
+
+    Si la boutique est suspendue (impayé ou décision admin), on affiche une page
+    de régularisation au lieu du tableau de bord.
+    """
     user = _current_user(request, db)
     if user is None:
         return None, _redirect("/app/login")
     shop = _active_shop(db, user)
     if shop is None:
         return None, _redirect("/app/onboarding")
+    if shop.status == models.ShopStatus.SUSPENDED:
+        return None, templates.TemplateResponse(
+            request, "merchant/suspended.html",
+            {"shop": shop, "reason": shop.suspended_reason, "support_number": settings.SUPPORT_WHATSAPP},
+            status_code=403,
+        )
     return (user, shop), None
 
 

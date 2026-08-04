@@ -48,8 +48,14 @@ class Settings:
         "SMARTSHOP_PAYMENT_WEBHOOK_SECRET", "dev-payment-webhook-secret"
     )
 
+    # Secret pour l'endpoint cron (suspension auto des abonnements impayés).
+    CRON_SECRET: str = os.getenv("SMARTSHOP_CRON_SECRET", "dev-cron-secret")
+
     # Base publique utilisée pour construire les liens de boutique et QR codes.
     PUBLIC_BASE_URL: str = os.getenv("SMARTSHOP_PUBLIC_BASE_URL", "http://localhost:8000")
+
+    # Numéro WhatsApp du support (chiffres uniquement, format international).
+    SUPPORT_WHATSAPP: str = os.getenv("SMARTSHOP_SUPPORT_WHATSAPP", "237600000000")
 
     # Cookie sécurisé uniquement en HTTPS (mettre à True derrière TLS).
     COOKIE_SECURE: bool = _get_bool("SMARTSHOP_COOKIE_SECURE", False)

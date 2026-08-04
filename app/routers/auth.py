@@ -59,6 +59,12 @@ def login(data: schemas.LoginIn, db: Session = Depends(get_db)) -> schemas.Token
     return schemas.TokenOut(access_token=token, user_id=user.id, role=user.role.value)
 
 
+@router.post("/refresh", response_model=schemas.TokenOut)
+def refresh(user: models.User = Depends(get_current_user)) -> schemas.TokenOut:
+    token = create_token({"sub": str(user.id), "role": user.role.value})
+    return schemas.TokenOut(access_token=token, user_id=user.id, role=user.role.value)
+
+
 @router.get("/me")
 def me(user: models.User = Depends(get_current_user)) -> dict:
     return {

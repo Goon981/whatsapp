@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% block content %}
+  <h1 class="page-title">Abonnements & paiements</h1>
+
+  <div class="tiles two mb">
+    <div class="tile"><div class="k">Boutiques payantes</div><div class="v">{{ o.paying }}</div></div>
+    <div class="tile"><div class="k">Revenu mensuel (MRR)</div><div class="v">{{ o.mrr|fcfa_short }}</div></div>
+    <div class="tile"><div class="k">En retard de paiement</div><div class="v" style="color:var(--amber-fg)">{{ o.overdue }}</div></div>
+    <div class="tile"><div class="k">Suspendues (impayé)</div><div class="v" style="color:var(--red-fg)">{{ o.suspended }}</div></div>
+    <div class="tile"><div class="k">Total encaissé</div><div class="v">{{ o.total_collected|fcfa_short }}</div></div>
+    <div class="tile"><div class="k">Boutiques totales</div><div class="v">{{ o.total_shops }}</div></div>
+  </div>
+
+  <div class="flash info">
+    ⚙️ Suspension automatique active : toute boutique dont l'échéance est dépassée (au-delà du délai de grâce)
+    est désactivée automatiquement. Marquez un paiement pour la réactiver instantanément.
+  </div>
+
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>Boutique</th><th>Formule</th><th>Montant/mois</th><th>Échéance</th><th>Statut paiement</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>
+            <a href="/s/{{ r.shop.slug }}" target="_blank">{{ r.shop.name }}</a>
+            {% if r.shop.status.value == 'suspended' %}<br><span class="badge red">Désactivée</span>{% endif %}
+          </td>
+          <td>
+            <form method="post" action="/admin/billing/{{ r.shop.id }}/plan" style="display:flex;gap:6px">
+              <select name="plan" onchange="this.form.submit()" style="min-height:38px;padding:6px 8px">
+                {% for key, label in plans %}<option value="{{ key }}" {% if r.sub and r.sub.plan.value==key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </form>
+          </td>
+          <td>{{ (r.sub.amount if r.sub else 0)|fcfa }}</td>
+          <td>
+            {% if r.sub and r.sub.current_period_end %}
+              {{ r.sub.current_period_end.strftime('%d/%m/%Y') }}<br>
+              <span class="muted small">
+                {% if r.state.days_left >= 0 %}{{ r.state.days_left }} j restants{% else %}{{ -r.state.days_left }} j de retard{% endif %}
+              </span>
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td><span class="badge {{ r.state.css }}">{{ r.state.label }}</span></td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <form method="post" action="/admin/billing/{{ r.shop.id }}/mark-paid"><button class="btn sm" type="submit">✔ Marquer payé (+1 mois)</button></form>
+              {% if r.shop.status.value == 'suspended' %}
+                <form method="post" action="/admin/shops/{{ r.shop.id }}/activate"><button class="btn sm secondary" type="submit">Réactiver</button></form>
+              {% else %}
+                <form method="post" action="/admin/shops/{{ r.shop.id }}/suspend" onsubmit="return confirm('Désactiver {{ r.shop.name }} ?')"><button class="btn sm danger" type="submit">Désactiver</button></form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">Le tarif s'ajuste automatiquement au changement de formule ; il reste modifiable ensuite.
+  Une désactivation manuelle ou automatique rend la boutique invisible au public (RM-01), mais conserve ses données.</p>
+{% endblock %}

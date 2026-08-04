@@ -19,9 +19,10 @@
   <main class="container page">
     <div class="pill-tabs">
       <a href="/admin" class="{% if active_tab=='overview' %}active{% endif %}">Vue globale</a>
+      <a href="/admin/billing" class="{% if active_tab=='billing' %}active{% endif %}">Abonnements</a>
       <a href="/admin/shops" class="{% if active_tab=='shops' %}active{% endif %}">Boutiques</a>
       <a href="/admin/incidents" class="{% if active_tab=='incidents' %}active{% endif %}">Incidents</a>
-      <a href="/admin/audit" class="{% if active_tab=='audit' %}active{% endif %}">Journal d'audit</a>
+      <a href="/admin/audit" class="{% if active_tab=='audit' %}active{% endif %}">Journal</a>
     </div>
     {% if flash %}<div class="flash ok">{{ flash }}</div>{% endif %}
     {% block content %}{% endblock %}

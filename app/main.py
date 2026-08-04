@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -50,6 +51,15 @@ app = FastAPI(
         "Montants en entiers FCFA, isolation multi-tenant par boutique."
     ),
     lifespan=lifespan,
+)
+
+# --- CORS (pour frontend React) -------------------------------------------- #
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # À restreindre en production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -100,6 +110,37 @@ def landing(request: Request):
 @app.get("/health", include_in_schema=False)
 def health():
     return {"status": "ok", "version": __version__}
+
+
+# --- Frontend React SPA (fallback) ----------------------------------------- #
+@app.get("/app", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/app/{path:path}", response_class=HTMLResponse, include_in_schema=False)
+def serve_app(request: Request, path: str = ""):
+    """Serve React SPA index.html avec env vars injectées."""
+    import json
+    from pathlib import Path
+
+    dist_dir = Path(settings.STATIC_DIR) / "dist"
+    index_file = dist_dir / "index.html"
+
+    if not index_file.exists():
+        # Fallback si le build React n'existe pas encore
+        return "Frontend not built. Run: cd app/frontend && npm run build"
+
+    with open(index_file, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    # Injecter les variables d'env pour le frontend
+    env_script = f"""
+    <script>
+        window.__ENV__ = {json.dumps({
+            'API_BASE_URL': settings.PUBLIC_BASE_URL,
+            'APP_VERSION': __version__,
+        })};
+    </script>
+    """
+    html = html.replace("</head>", env_script + "</head>")
+    return html
 
 
 # --- Gestion d'erreurs : HTML pour les pages, JSON pour l'API -------------- #
