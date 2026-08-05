@@ -22,6 +22,7 @@ from .models import Shop, ShopStatus
 from .routers import (
     admin,
     auth,
+    billing,
     catalog,
     invitations,
     merchant,
@@ -80,6 +81,7 @@ app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="stat
 
 # --- API REST (OpenAPI) ---------------------------------------------------- #
 app.include_router(auth.router)
+app.include_router(billing.router)
 app.include_router(shops.router)
 app.include_router(catalog.router)
 app.include_router(orders.router)
