@@ -1,1 +1,1 @@
-﻿web: npm --prefix app/frontend install && npm --prefix app/frontend run build && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+﻿web: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
