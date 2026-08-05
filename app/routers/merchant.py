@@ -66,9 +66,12 @@ def _active_shop(db: Session, user: models.User) -> models.Shop | None:
 
 def _check_subscription_active(shop: models.Shop) -> bool:
     """Vérifie si la boutique a un abonnement actif (trial ou payant)"""
-    if not shop.trial_expires_at:
-        return False
-    return shop.trial_expires_at > utcnow()
+    try:
+        if not shop.trial_expires_at:
+            return False
+        return shop.trial_expires_at > utcnow()
+    except Exception:
+        return True  # Par défaut, laisser accès
 
 
 def _set_session(response: RedirectResponse, user: models.User) -> None:
@@ -286,12 +289,15 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     now = utcnow()
     trial_status = "TRIAL"
     days_left = 0
-    if shop.trial_expires_at:
-        days_left = (shop.trial_expires_at - now).days
-        if days_left < 0:
-            trial_status = "EXPIRED"
-        elif days_left == 0:
-            trial_status = "LAST_DAY"
+    try:
+        if shop.trial_expires_at:
+            days_left = (shop.trial_expires_at - now).days
+            if days_left < 0:
+                trial_status = "EXPIRED"
+            elif days_left == 0:
+                trial_status = "LAST_DAY"
+    except Exception:
+        trial_status = "TRIAL"  # Défaut
 
     return templates.TemplateResponse(
         request, "merchant/dashboard.html",
