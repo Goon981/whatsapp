@@ -45,12 +45,12 @@
         }
 
         .plan-card:hover {
-            border-color: #007a49;
+            border-color: #25d366;
             background: #f0f8f5;
         }
 
         .plan-card.selected {
-            border: 2px solid #007a49;
+            border: 2px solid #25d366;
             background: #f0f8f5;
         }
 
@@ -63,21 +63,15 @@
 
         .plan-name {
             font-weight: 600;
-            color: #007a49;
+            color: #25d366;
             display: block;
             margin-bottom: 4px;
-        }
-
-        .plan-duration {
-            font-size: 13px;
-            color: #666;
-            display: block;
         }
 
         .plan-price {
             font-size: 18px;
             font-weight: bold;
-            color: #007a49;
+            color: #25d366;
         }
 
         .plan-per-day {
@@ -198,17 +192,14 @@
 
     <main class="container page">
         <section class="content">
-            <!-- Trial Banner -->
             <div class="trial-banner">
                 <div>✓</div>
                 <strong>Vous avez 14 jours pour payer</strong>
                 <small>Choisissez un plan ou continuez sans payer pour accéder au tableau de bord</small>
             </div>
 
-            <!-- Plans Section -->
             <h3>Choisissez votre plan</h3>
             <div class="plans-grid">
-                <!-- Starter Plan -->
                 <button class="plan-card" onclick="selectPlan('starter', this)">
                     <div class="plan-header">
                         <div>
@@ -220,7 +211,6 @@
                     <span class="plan-per-day">166 FCFA/jour</span>
                 </button>
 
-                <!-- Business Plan -->
                 <button class="plan-card" onclick="selectPlan('business', this)">
                     <div class="plan-header">
                         <div>
@@ -232,7 +222,6 @@
                     <span class="plan-per-day">133 FCFA/jour • Économie 3 000 FCFA</span>
                 </button>
 
-                <!-- Premium Plan -->
                 <button class="plan-card" onclick="selectPlan('premium', this)">
                     <div class="plan-header">
                         <div>
@@ -245,25 +234,21 @@
                 </button>
             </div>
 
-            <!-- Payment Methods Section -->
             <h3>Moyens de paiement</h3>
             <div class="payment-methods">
                 <button class="payment-method" onclick="selectPaymentMethod('MTN', this)">📱 MTN Mobile Money</button>
                 <button class="payment-method" onclick="selectPaymentMethod('ORANGE', this)">🟠 Orange Money</button>
             </div>
 
-            <!-- Support Banner -->
             <div class="support-banner">
                 <b>Support :</b>
                 +237 690088572
             </div>
 
-            <!-- Confirm Button -->
             <button class="primary sticky-cta" id="confirmBtn" onclick="confirmPayment()" disabled>
                 🔒 Confirmer et payer
             </button>
 
-            <!-- Skip Payment Button -->
             <button class="secondary" onclick="skipPayment()">
                 Continuer sans payer
             </button>
@@ -273,6 +258,7 @@
     <script>
         let selectedPlan = null;
         let selectedPaymentMethod = null;
+        const SHOP_ID = {{ shop.id }};
 
         function selectPlan(planName, element) {
             document.querySelectorAll('.plan-card').forEach(card => {
@@ -303,7 +289,6 @@
             btn.disabled = true;
             btn.textContent = 'Initiation du paiement...';
 
-            const shopId = window.SHOP_ID || 1;
             const phone = prompt('Entrez votre numéro de téléphone (+237...)');
 
             if (!phone) {
@@ -313,7 +298,7 @@
             }
 
             // Appeler l'endpoint Campay
-            fetch(`/api/billing/campay/initiate?shop_id=${shopId}&plan=${selectedPlan}&phone=${encodeURIComponent(phone)}&network=${selectedPaymentMethod}`, {
+            fetch(`/api/billing/campay/initiate?shop_id=${SHOP_ID}&plan=${selectedPlan}&phone=${encodeURIComponent(phone)}&network=${selectedPaymentMethod}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             })
@@ -321,16 +306,15 @@
             .then(data => {
                 if (data.success) {
                     alert('Paiement initié! Veuillez compléter votre paiement sur votre téléphone.');
-                    // En production, redirection vers Campay
                     window.location.href = '/app';
                 } else {
                     alert('Erreur: ' + (data.error || 'Impossible d\'initier le paiement'));
+                    btn.disabled = false;
+                    btn.textContent = '🔒 Confirmer et payer';
                 }
             })
             .catch(err => {
                 alert('Erreur: ' + err.message);
-            })
-            .finally(() => {
                 btn.disabled = false;
                 btn.textContent = '🔒 Confirmer et payer';
             });

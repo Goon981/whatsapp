@@ -768,6 +768,9 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
     if redirect:
         return redirect
 
+    return templates.TemplateResponse(request, "merchant/payment.html", ctx)
+
+    # OLD INLINE HTML BELOW (REMOVED)
     html = """
     <!doctype html>
     <html lang="fr">
