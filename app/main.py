@@ -27,6 +27,7 @@ from .routers import (
     merchant,
     orders,
     payments,
+    setup,
     shops,
     stats,
     storefront,
@@ -79,6 +80,7 @@ async def security_headers(request: Request, call_next):
 app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")
 
 # --- API REST (OpenAPI) ---------------------------------------------------- #
+app.include_router(setup.router)
 app.include_router(auth.router)
 app.include_router(shops.router)
 app.include_router(catalog.router)
