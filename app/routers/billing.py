@@ -114,13 +114,13 @@ async def get_subscription_status(
             "support": SUPPORT_NUMBER
         }
 
-    if sub.expires_at and sub.expires_at > now:
-        days_remaining = (sub.expires_at - now).days
+    if sub.current_period_end and sub.current_period_end > now:
+        days_remaining = (sub.current_period_end - now).days
         return {
             "status": "active",
-            "plan": sub.plan,
+            "plan": str(sub.plan),
             "days_remaining": days_remaining,
-            "expires_at": sub.expires_at,
+            "expires_at": str(sub.current_period_end),
             "message": f"Abonnement actif. Expire dans {days_remaining} jours"
         }
     else:
@@ -164,12 +164,12 @@ async def check_expiry_and_notify(db: Session = Depends(get_db)):
 
         # Vérifier subscription
         sub = shop.subscription
-        if sub and sub.expires_at:
-            days_left = (sub.expires_at - now).days
+        if sub and sub.current_period_end:
+            days_left = (sub.current_period_end - now).days
 
             # Notification 3 jours avant expiration de l'abonnement
             if days_left == 3:
-                wa_url = f"https://wa.me/{shop.phone_number}?text=Votre%20abonnement%20SmartShop%20expire%20dans%203%20jours.%20Renouvelez%20pour%20rester%20actif.%20https://shopcam237.com/app/payment"
+                wa_url = f"https://wa.me/{shop.whatsapp_number}?text=Votre%20abonnement%20SmartShop%20expire%20dans%203%20jours.%20Renouvelez%20pour%20rester%20actif.%20https://shopcam237.com/app/payment"
                 notifications_sent += 1
 
             # Suspendre si subscription expirée
@@ -232,7 +232,7 @@ async def validate_payment(
 
     sub = shop.subscription or Subscription(shop_id=payment.shop_id)
     sub.plan = SubscriptionPlan[payment.plan.upper()]
-    sub.expires_at = utcnow() + timedelta(days=duration * 30)
+    sub.current_period_end = utcnow() + timedelta(days=duration * 30)
     sub.status = SubscriptionStatus.ACTIVE
 
     db.add(sub)
@@ -242,7 +242,7 @@ async def validate_payment(
         "success": True,
         "message": f"Paiement accepté. Abonnement {payment.plan} activé pour {duration} mois",
         "reference": payment.reference,
-        "expires_at": sub.expires_at,
+        "expires_at": str(sub.current_period_end),
         "dashboard_url": f"/app?shop_id={payment.shop_id}"
     }
 
@@ -272,9 +272,9 @@ async def process_payment_sandbox(
 
     # Créer ou mettre à jour la subscription
     sub = shop.subscription or Subscription(shop_id=shop_id)
-    sub.plan = plan  # Stocker comme string (vérifier le schéma)
-    sub.expires_at = utcnow() + timedelta(days=duration * 30)
-    sub.status = "ACTIVE"
+    sub.plan = SubscriptionPlan[plan.upper()] if plan.upper() in [p.name for p in SubscriptionPlan] else SubscriptionPlan.STARTER
+    sub.current_period_end = utcnow() + timedelta(days=duration * 30)
+    sub.status = SubscriptionStatus.ACTIVE
 
     db.add(sub)
 
@@ -288,6 +288,6 @@ async def process_payment_sandbox(
         "plan": plan,
         "amount": required_amount,
         "duration_months": duration,
-        "expires_at": sub.expires_at.isoformat() if hasattr(sub.expires_at, 'isoformat') else str(sub.expires_at),
+        "expires_at": str(sub.current_period_end),
         "message": f"SANDBOX: Paiement simulé - Abonnement {plan} activé pour {duration} mois"
     }
