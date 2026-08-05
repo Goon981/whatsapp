@@ -764,11 +764,11 @@ def add_zone(request: Request, name: str = Form(...), fee: int = Form(0), db: Se
 @router.get("/payment", response_class=HTMLResponse)
 async def payment_page(request: Request, db: Session = Depends(get_db)):
     """Page de paiement - choix du plan et moyens de paiement."""
-    ctx, redirect = _require_shop(request, db)
+    (user, shop), redirect = _require_shop(request, db)
     if redirect:
         return redirect
 
-    return templates.TemplateResponse(request, "merchant/payment.html", ctx)
+    return templates.TemplateResponse(request, "merchant/payment.html", {"shop": shop, "user": user})
 
     # OLD INLINE HTML BELOW (REMOVED)
     html = """
