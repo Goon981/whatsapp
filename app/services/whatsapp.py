@@ -70,3 +70,24 @@ def build_wa_link(shop: models.Shop, order: models.Order) -> str:
         return f"https://wa.me/{number}?text={text}"
     # Sans numéro configuré : lien générique que le client dirige lui-même.
     return f"https://wa.me/?text={text}"
+
+
+def build_expiry_notification_message(shop: models.Shop, days_left: int) -> str:
+    """Compose le message d'expiration de l'abonnement."""
+    if days_left == 0:
+        message = f"*DERNIER JOUR* ⚠️\n\nVotre période d'essai pour {shop.name} expire AUJOURD'HUI!\n\nRendez-vous sur votre tableau de bord pour choisir un plan de paiement et continuer votre activité."
+    elif days_left == 1:
+        message = f"*Expiration dans 1 jour* ⚠️\n\nVotre période d'essai pour {shop.name} expire demain.\n\nRendez-vous sur votre tableau de bord pour choisir un plan de paiement."
+    else:
+        message = f"*Expiration dans {days_left} jours* ℹ️\n\nVotre période d'essai pour {shop.name} expire dans {days_left} jours.\n\nN'hésitez pas à choisir un plan de paiement dès maintenant."
+    return message
+
+
+def build_payment_received_message(shop: models.Shop, plan: str, amount: int) -> str:
+    """Compose le message de confirmation de paiement."""
+    plan_names = {
+        "starter": "Démarrage (1 mois)",
+        "business": "Croissance (3 mois)",
+        "premium": "Pro annuel (12 mois)"
+    }
+    return f"*Paiement reçu* ✓\n\nMerci pour votre confiance!\n\nPlan: {plan_names.get(plan, plan)}\nMontant: {format_fcfa(amount)}\n\nVotre boutique {shop.name} est maintenant active."

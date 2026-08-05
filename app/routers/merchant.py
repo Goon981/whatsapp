@@ -64,6 +64,13 @@ def _active_shop(db: Session, user: models.User) -> models.Shop | None:
     )
 
 
+def _check_subscription_active(shop: models.Shop) -> bool:
+    """Vérifie si la boutique a un abonnement actif (trial ou payant)"""
+    if not shop.trial_expires_at:
+        return False
+    return shop.trial_expires_at > utcnow()
+
+
 def _set_session(response: RedirectResponse, user: models.User) -> None:
     token = create_token({"sub": str(user.id), "role": user.role.value})
     response.set_cookie(
@@ -261,6 +268,11 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     if redirect:
         return redirect
     user, shop = ctx
+
+    # Vérifier si l'abonnement est expiré
+    if not _check_subscription_active(shop):
+        return _redirect("/app/payment")
+
     stats = stats_service.shop_dashboard(db, shop.id)
     recent_orders = (
         db.query(models.Order)
@@ -269,6 +281,18 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         .limit(4)
         .all()
     )
+
+    # Calcul du statut d'abonnement
+    now = utcnow()
+    trial_status = "TRIAL"
+    days_left = 0
+    if shop.trial_expires_at:
+        days_left = (shop.trial_expires_at - now).days
+        if days_left < 0:
+            trial_status = "EXPIRED"
+        elif days_left == 0:
+            trial_status = "LAST_DAY"
+
     return templates.TemplateResponse(
         request, "merchant/dashboard.html",
         {
@@ -278,6 +302,8 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "chart": charts.line_chart(stats["series"]), "on_dark": True,
             "status_labels": STATUS_LABELS, "status_class": STATUS_CLASS,
             "public_base": settings.PUBLIC_BASE_URL,
+            "trial_status": trial_status,
+            "days_left": max(0, days_left),
         },
     )
 
