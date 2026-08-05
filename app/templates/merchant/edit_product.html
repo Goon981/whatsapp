@@ -1,0 +1,521 @@
+{% extends "merchant/base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block heading %}{{ product.name }}{% endblock %}
+{% block subheading %}Éditer le produit et sa galerie d'images{% endblock %}
+
+{% block content %}
+<style>
+    .edit-section {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+        border: 1px solid #eee;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #25d366;
+    }
+
+    .dropzone {
+        border: 2px dashed #25d366;
+        border-radius: 8px;
+        padding: 40px 20px;
+        text-align: center;
+        background: #f0f8f5;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 20px;
+    }
+
+    .dropzone:hover {
+        background: #e8f5e9;
+        border-color: #128c4f;
+    }
+
+    .dropzone.dragover {
+        background: #e8f5e9;
+        border-color: #128c4f;
+        transform: scale(1.02);
+    }
+
+    .dropzone-text {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .dropzone-hint {
+        color: #999;
+        font-size: 12px;
+    }
+
+    .image-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .image-item {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #eee;
+        background: #f5f5f5;
+    }
+
+    .image-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-item.primary {
+        border-color: #25d366;
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px #25d366;
+    }
+
+    .image-item-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .image-item:hover .image-item-actions {
+        opacity: 1;
+    }
+
+    .action-btn {
+        background: #25d366;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        flex: 1;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        filter: brightness(0.95);
+    }
+
+    .action-btn.danger {
+        background: #dc3545;
+    }
+
+    .action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .upload-progress {
+        display: none;
+        background: #f0f8f5;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+        border-left: 4px solid #25d366;
+    }
+
+    .upload-progress.show {
+        display: block;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 4px;
+        background: #eee;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #25d366;
+        width: 0%;
+        transition: width 0.3s;
+    }
+
+    .retry-badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        background: #ff9800;
+        color: white;
+        font-size: 10px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-weight: 600;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-row.full {
+        grid-template-columns: 1fr;
+    }
+
+    input, textarea, select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 14px;
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .save-btn {
+        background: #25d366;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 16px;
+        width: 100%;
+        transition: all 0.2s;
+    }
+
+    .save-btn:hover:not(:disabled) {
+        filter: brightness(0.95);
+    }
+
+    .save-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .empty-gallery {
+        text-align: center;
+        padding: 20px;
+        color: #999;
+        background: #f9f9f9;
+        border-radius: 8px;
+        border: 1px dashed #ddd;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #0d47a1;
+        margin-bottom: 16px;
+    }
+</style>
+
+<form id="productForm" method="post" action="/app/products/{{ product.id }}" class="edit-section">
+    <div class="section-title">Informations du produit</div>
+
+    <div class="form-group">
+        <label for="name">Nom *</label>
+        <input id="name" name="name" value="{{ product.name }}" required>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="price">Prix (FCFA) *</label>
+            <input id="price" name="price" type="number" min="0" value="{{ product.price }}" required>
+        </div>
+        <div class="form-group">
+            <label for="promo_price">Prix promo</label>
+            <input id="promo_price" name="promo_price" type="number" min="0" value="{{ product.promo_price or '' }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="stock">Stock</label>
+            <input id="stock" name="stock" type="number" min="0" value="{{ product.stock }}">
+        </div>
+        <div class="form-group">
+            <label for="low_stock_threshold">Seuil d'alerte</label>
+            <input id="low_stock_threshold" name="low_stock_threshold" type="number" min="0" value="{{ product.low_stock_threshold }}">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="category_id">Catégorie</label>
+        <select id="category_id" name="category_id">
+            <option value="">— Aucune —</option>
+            {% for c in categories %}<option value="{{ c.id }}" {% if c.id == product.category_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description">{{ product.description or '' }}</textarea>
+    </div>
+
+    <button type="submit" class="save-btn">💾 Enregistrer les modifications</button>
+</form>
+
+<!-- Galerie d'images -->
+<div class="edit-section">
+    <div class="section-title">🖼️ Galerie d'images</div>
+
+    <div class="info-box">
+        💡 Uploadez plusieurs images pour créer une galerie. La première image marquée comme "primaire" sera utilisée dans le catalogue.
+    </div>
+
+    <!-- Dropzone -->
+    <div class="dropzone" id="dropzone">
+        <div class="dropzone-text">📸 Déposez vos images ici</div>
+        <div class="dropzone-hint">ou cliquez pour sélectionner (JPG, PNG, max 5MB)</div>
+        <input type="file" id="imageInput" multiple accept="image/*" style="display:none">
+    </div>
+
+    <!-- Barre de progression -->
+    <div class="upload-progress" id="uploadProgress">
+        <div>⏳ Upload en cours...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <!-- Galerie actuelle -->
+    <div id="imageGallery">
+        {% if images %}
+            <div class="image-gallery">
+                {% for img in images %}
+                <div class="image-item {% if img.is_primary %}primary{% endif %}" data-image-id="{{ img.id }}">
+                    {% if img.is_primary %}<div class="retry-badge">PRINCIPALE</div>{% endif %}
+                    <img src="{{ img.image_url }}" alt="{{ img.alt_text or 'Produit' }}">
+                    <div class="image-item-actions">
+                        {% if not img.is_primary %}
+                        <button type="button" class="action-btn" onclick="setPrimary({{ img.id }})">⭐ Principale</button>
+                        {% endif %}
+                        <button type="button" class="action-btn danger" onclick="deleteImage({{ img.id }})">🗑️ Supprimer</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-gallery">📷 Aucune image encore</div>
+        {% endif %}
+    </div>
+</div>
+
+<input type="file" id="imageInput" multiple accept="image/*" style="display:none">
+
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const imageInput = document.getElementById('imageInput');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const productId = {{ product.id }};
+    const shopId = {{ shop.id }};
+
+    // Retry configuration
+    const retryConfig = {
+        maxRetries: 5,
+        initialDelay: 1000, // 1s
+        maxDelay: 16000, // 16s
+    };
+
+    class RetryableUpload {
+        constructor(file, retryCount = 0) {
+            this.file = file;
+            this.retryCount = retryCount;
+            this.delay = retryConfig.initialDelay * Math.pow(2, retryCount);
+        }
+
+        async upload() {
+            if (this.retryCount > retryConfig.maxRetries) {
+                throw new Error(`Upload failed after ${retryConfig.maxRetries} retries`);
+            }
+
+            const formData = new FormData();
+            formData.append('file', this.file);
+
+            try {
+                const response = await fetch(`/api/shops/${shopId}/products/${productId}/images`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                if (this.retryCount < retryConfig.maxRetries) {
+                    console.log(`Retry ${this.retryCount + 1}/${retryConfig.maxRetries} for ${this.file.name} (delay: ${this.delay}ms)`);
+                    await new Promise(resolve => setTimeout(resolve, this.delay));
+                    this.retryCount++;
+                    this.delay = Math.min(this.delay * 2, retryConfig.maxDelay);
+                    return this.upload();
+                }
+                throw error;
+            }
+        }
+    }
+
+    // Drag and drop handlers
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    dropzone.addEventListener('click', () => imageInput.click());
+    imageInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    async function handleFiles(files) {
+        if (files.length === 0) return;
+
+        uploadProgress.classList.add('show');
+        progressFill.style.width = '0%';
+
+        const uploads = Array.from(files).map((file, index) => {
+            const uploader = new RetryableUpload(file);
+            return uploader.upload()
+                .then(data => {
+                    progressFill.style.width = `${((index + 1) / files.length) * 100}%`;
+                    addImageToGallery(data);
+                })
+                .catch(err => {
+                    alert(`❌ Erreur upload ${file.name}: ${err.message}`);
+                    console.error(err);
+                });
+        });
+
+        try {
+            await Promise.all(uploads);
+            setTimeout(() => uploadProgress.classList.remove('show'), 1000);
+        } catch (err) {
+            uploadProgress.classList.remove('show');
+        }
+    }
+
+    function addImageToGallery(imageData) {
+        const gallery = document.querySelector('.image-gallery') || createGallery();
+        const div = document.createElement('div');
+        div.className = 'image-item';
+        div.setAttribute('data-image-id', imageData.id);
+        div.innerHTML = `
+            <img src="${imageData.image_url}" alt="${imageData.alt_text || 'Produit'}">
+            <div class="image-item-actions">
+                <button type="button" class="action-btn" onclick="setPrimary(${imageData.id})">⭐ Principale</button>
+                <button type="button" class="action-btn danger" onclick="deleteImage(${imageData.id})">🗑️ Supprimer</button>
+            </div>
+        `;
+        gallery.appendChild(div);
+
+        // Remove empty state if it exists
+        const emptyState = document.querySelector('.empty-gallery');
+        if (emptyState) emptyState.remove();
+    }
+
+    function createGallery() {
+        const gallery = document.createElement('div');
+        gallery.className = 'image-gallery';
+        document.getElementById('imageGallery').innerHTML = '';
+        document.getElementById('imageGallery').appendChild(gallery);
+        return gallery;
+    }
+
+    async function setPrimary(imageId) {
+        try {
+            const response = await fetch(`/api/shops/${shopId}/products/${productId}/images/${imageId}/primary`, {
+                method: 'PUT',
+            });
+
+            if (!response.ok) throw new Error('Erreur lors de la mise à jour');
+
+            // Update UI
+            document.querySelectorAll('.image-item').forEach(item => {
+                item.classList.remove('primary');
+                item.querySelector('.retry-badge')?.remove();
+            });
+
+            const item = document.querySelector(`[data-image-id="${imageId}"]`);
+            item.classList.add('primary');
+            const badge = document.createElement('div');
+            badge.className = 'retry-badge';
+            badge.textContent = 'PRINCIPALE';
+            item.appendChild(badge);
+
+            // Update button
+            item.querySelector('.action-btn').style.display = 'none';
+
+            alert('✓ Image définie comme principale');
+        } catch (err) {
+            alert('❌ Erreur: ' + err.message);
+        }
+    }
+
+    async function deleteImage(imageId) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette image?')) return;
+
+        try {
+            const response = await fetch(`/api/shops/${shopId}/products/${productId}/images/${imageId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error('Erreur lors de la suppression');
+
+            document.querySelector(`[data-image-id="${imageId}"]`).remove();
+
+            // Show empty state if no more images
+            const gallery = document.querySelector('.image-gallery');
+            if (!gallery || gallery.children.length === 0) {
+                document.getElementById('imageGallery').innerHTML = '<div class="empty-gallery">📷 Aucune image encore</div>';
+            }
+
+            alert('✓ Image supprimée');
+        } catch (err) {
+            alert('❌ Erreur: ' + err.message);
+        }
+    }
+</script>
+{% endblock %}

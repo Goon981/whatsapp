@@ -607,6 +607,77 @@ def toggle_product(product_id: int, request: Request, db: Session = Depends(get_
     return _redirect("/app/products")
 
 
+@router.get("/products/{product_id}/edit", response_class=HTMLResponse)
+def edit_product_page(product_id: int, request: Request, db: Session = Depends(get_db)):
+    """Affiche la page d'édition du produit avec galerie d'images."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    user, shop = ctx
+    product = (
+        db.query(models.Product)
+        .filter(models.Product.id == product_id, models.Product.shop_id == shop.id)
+        .first()
+    )
+    if not product:
+        return _redirect("/app/products")
+
+    images = (
+        db.query(models.ProductImage)
+        .filter(models.ProductImage.product_id == product_id)
+        .order_by(models.ProductImage.position)
+        .all()
+    )
+    categories = db.query(models.Category).filter(models.Category.shop_id == shop.id).all()
+
+    return templates.TemplateResponse(
+        request, "merchant/edit_product.html",
+        {
+            "shop": shop, "user": user, "product": product,
+            "images": images, "categories": categories,
+            "active_tab": "products",
+        },
+    )
+
+
+@router.post("/products/{product_id}", response_class=HTMLResponse)
+def update_product(
+    product_id: int,
+    request: Request,
+    name: str = Form(...),
+    price: int = Form(...),
+    stock: int = Form(0),
+    low_stock_threshold: int = Form(5),
+    promo_price: str = Form(""),
+    category_id: str = Form(""),
+    description: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """Met à jour les informations du produit."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    _, shop = ctx
+    product = (
+        db.query(models.Product)
+        .filter(models.Product.id == product_id, models.Product.shop_id == shop.id)
+        .first()
+    )
+    if not product:
+        return _redirect("/app/products")
+
+    product.name = name
+    product.price = max(0, price)
+    product.stock = max(0, stock)
+    product.low_stock_threshold = max(0, low_stock_threshold)
+    product.promo_price = int(promo_price) if promo_price.strip().isdigit() else None
+    product.category_id = int(category_id) if category_id.strip().isdigit() else None
+    product.description = description.strip() or None
+
+    db.commit()
+    return _redirect("/app/products")
+
+
 # --------------------------------------------------------------------------- #
 # Commandes
 # --------------------------------------------------------------------------- #

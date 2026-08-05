@@ -139,6 +139,16 @@ class ProductOut(BaseModel):
     variants: list[VariantOut] = []
 
 
+class ProductImageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    image_url: str
+    alt_text: str | None
+    position: int
+    is_primary: bool
+    created_at: datetime
+
+
 # --------------------------------------------------------------------------- #
 # Commandes
 # --------------------------------------------------------------------------- #

@@ -222,6 +222,9 @@ class Product(Base):
     variants: Mapped[list["ProductVariant"]] = relationship(
         back_populates="product", cascade="all, delete-orphan"
     )
+    images: Mapped[list["ProductImage"]] = relationship(
+        back_populates="product", cascade="all, delete-orphan"
+    )
 
     @property
     def effective_price(self) -> int:
@@ -248,6 +251,22 @@ class ProductVariant(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     product: Mapped["Product"] = relationship(back_populates="variants")
+
+
+class ProductImage(Base):
+    """Galerie d'images pour les produits - plusieurs images par produit."""
+    __tablename__ = "product_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    shop_id: Mapped[int] = mapped_column(ForeignKey("shops.id"), index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), index=True)
+    image_url: Mapped[str] = mapped_column(String(255))
+    alt_text: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    position: Mapped[int] = mapped_column(Integer, default=0)  # ordre dans la galerie
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)  # image principale
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    product: Mapped["Product"] = relationship(back_populates="images")
 
 
 # --------------------------------------------------------------------------- #

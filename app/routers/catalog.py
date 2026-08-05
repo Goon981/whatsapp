@@ -5,12 +5,16 @@ logiques (archivage — RM-09).
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+from pathlib import Path
+import os
+import uuid
 
 from .. import models, schemas
 from ..database import get_db
 from ..deps import require_permission, require_shop_access
+from ..config import settings
 
 router = APIRouter(prefix="/api/shops/{shop_id}", tags=["catalog"])
 
@@ -178,3 +182,151 @@ def duplicate_product(
     db.commit()
     db.refresh(copy)
     return copy
+
+
+# --------------------------------------------------------------------------- #
+# Galerie d'images des produits
+# --------------------------------------------------------------------------- #
+class ProductImageIn(schemas.BaseModel):
+    alt_text: str | None = None
+
+
+@router.get("/products/{product_id}/images", response_model=list[schemas.ProductImageOut])
+def list_product_images(
+    product_id: int,
+    access=Depends(require_shop_access),
+    db: Session = Depends(get_db),
+):
+    """Récupère toutes les images d'un produit."""
+    shop, _ = access
+    product = _get_owned_product(db, shop.id, product_id)
+    return (
+        db.query(models.ProductImage)
+        .filter(models.ProductImage.product_id == product_id)
+        .order_by(models.ProductImage.position)
+        .all()
+    )
+
+
+@router.post("/products/{product_id}/images", response_model=schemas.ProductImageOut, status_code=201)
+async def upload_product_image(
+    product_id: int,
+    file: UploadFile = File(...),
+    access=Depends(require_permission("catalog")),
+    db: Session = Depends(get_db),
+):
+    """Upload une image pour la galerie du produit."""
+    shop, _ = access
+    product = _get_owned_product(db, shop.id, product_id)
+
+    # Validation du fichier
+    if file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
+        raise HTTPException(status_code=400, detail="Format d'image non autorisé")
+
+    ext = file.filename.split('.')[-1].lower()
+    if ext not in {"jpg", "jpeg", "png", "gif", "webp"}:
+        raise HTTPException(status_code=400, detail="Extension non autorisée")
+
+    # Sauvegarder l'image
+    upload_dir = settings.STATIC_DIR / "uploads" / "products"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = upload_dir / filename
+
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 5MB)")
+
+    with open(filepath, "wb") as f:
+        f.write(content)
+
+    # Créer l'entry ProductImage
+    max_position = (
+        db.query(db.func.max(models.ProductImage.position))
+        .filter(models.ProductImage.product_id == product_id)
+        .scalar()
+    ) or 0
+
+    image = models.ProductImage(
+        shop_id=shop.id,
+        product_id=product_id,
+        image_url=f"/static/uploads/products/{filename}",
+        position=max_position + 1,
+        is_primary=False,
+    )
+    db.add(image)
+    db.commit()
+    db.refresh(image)
+    return image
+
+
+@router.delete("/products/{product_id}/images/{image_id}", status_code=200)
+def delete_product_image(
+    product_id: int,
+    image_id: int,
+    access=Depends(require_permission("catalog")),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Supprime une image de la galerie."""
+    shop, _ = access
+    _get_owned_product(db, shop.id, product_id)
+
+    image = (
+        db.query(models.ProductImage)
+        .filter(
+            models.ProductImage.id == image_id,
+            models.ProductImage.product_id == product_id,
+            models.ProductImage.shop_id == shop.id,
+        )
+        .first()
+    )
+    if image is None:
+        raise HTTPException(404, "Image introuvable.")
+
+    # Supprimer le fichier physique
+    if image.image_url.startswith("/static/uploads/products/"):
+        filename = image.image_url.split("/")[-1]
+        filepath = settings.STATIC_DIR / "uploads" / "products" / filename
+        if filepath.exists():
+            os.remove(filepath)
+
+    db.delete(image)
+    db.commit()
+    return {"deleted": True, "image_id": image_id}
+
+
+@router.put("/products/{product_id}/images/{image_id}/primary", status_code=200)
+def set_primary_image(
+    product_id: int,
+    image_id: int,
+    access=Depends(require_permission("catalog")),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Définit une image comme image principale du produit."""
+    shop, _ = access
+    product = _get_owned_product(db, shop.id, product_id)
+
+    image = (
+        db.query(models.ProductImage)
+        .filter(
+            models.ProductImage.id == image_id,
+            models.ProductImage.product_id == product_id,
+        )
+        .first()
+    )
+    if image is None:
+        raise HTTPException(404, "Image introuvable.")
+
+    # Retirer le is_primary des autres images
+    db.query(models.ProductImage).filter(
+        models.ProductImage.product_id == product_id,
+        models.ProductImage.id != image_id,
+    ).update({models.ProductImage.is_primary: False})
+
+    # Définir comme primaire
+    image.is_primary = True
+    product.image_url = image.image_url  # Mettre à jour l'image principale du produit
+
+    db.commit()
+    return {"primary": True, "image_id": image_id}
