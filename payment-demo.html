@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartShop - Abonnement & Paiement</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 375px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .trial-banner {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .trial-banner strong {
+            display: block;
+            color: #2e7d32;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .trial-banner small {
+            display: block;
+            color: #558b2f;
+            margin-top: 4px;
+        }
+
+        h3 {
+            margin: 20px 0 12px 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .plans-grid {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .plan-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            text-align: left;
+        }
+
+        .plan-card:hover {
+            border-color: #007a49;
+            background: #f0f8f5;
+        }
+
+        .plan-card.selected {
+            border: 2px solid #007a49;
+            background: #f0f8f5;
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .plan-name {
+            font-weight: 600;
+            color: #007a49;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .plan-duration {
+            font-size: 13px;
+            color: #666;
+            display: block;
+        }
+
+        .plan-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007a49;
+        }
+
+        .plan-per-day {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+            display: block;
+        }
+
+        .payment-methods {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .payment-method {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .payment-method:hover {
+            border-color: #007a49;
+            background: #f0f8f5;
+        }
+
+        .support-banner {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #e65100;
+        }
+
+        .support-banner b {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #007a49;
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #005f38;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+            color: #2e7d32;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <button class="back-btn" onclick="history.back()">←</button>
+            <span>Abonnement & Paiement</span>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Trial Banner -->
+            <div class="trial-banner">
+                <div>✓</div>
+                <strong>Vous êtes en trial gratuit</strong>
+                <small>Expire dans 10 jours · Activation automatique à l'inscription</small>
+            </div>
+
+            <!-- Plans Section -->
+            <h3>Choisissez votre plan</h3>
+            <div class="plans-grid">
+                <!-- Starter Plan -->
+                <button class="plan-card" onclick="selectPlan('starter', this)">
+                    <div class="plan-header">
+                        <div>
+                            <span class="plan-name">Démarrage</span>
+                            <span class="plan-duration">1 mois</span>
+                        </div>
+                        <span class="plan-price">5 000 FCFA</span>
+                    </div>
+                    <span class="plan-per-day">166 FCFA/jour</span>
+                </button>
+
+                <!-- Business Plan -->
+                <button class="plan-card" onclick="selectPlan('business', this)">
+                    <div class="plan-header">
+                        <div>
+                            <span class="plan-name">Croissance</span>
+                            <span class="plan-duration">3 mois</span>
+                        </div>
+                        <span class="plan-price">12 000 FCFA</span>
+                    </div>
+                    <span class="plan-per-day">133 FCFA/jour • Économie 3 000 FCFA</span>
+                </button>
+
+                <!-- Premium Plan -->
+                <button class="plan-card" onclick="selectPlan('premium', this)">
+                    <div class="plan-header">
+                        <div>
+                            <span class="plan-name">Pro annuel</span>
+                            <span class="plan-duration">12 mois</span>
+                        </div>
+                        <span class="plan-price">50 000 FCFA</span>
+                    </div>
+                    <span class="plan-per-day">137 FCFA/jour • Économie 10 000 FCFA</span>
+                </button>
+            </div>
+
+            <!-- Payment Methods Section -->
+            <h3>Moyens de paiement</h3>
+            <div class="payment-methods">
+                <button class="payment-method">📱 MTN Mobile Money</button>
+                <button class="payment-method">🟠 Orange Money</button>
+            </div>
+
+            <!-- Support Banner -->
+            <div class="support-banner">
+                <b>Support :</b>
+                +237 690088572
+            </div>
+
+            <!-- Confirm Button -->
+            <button class="btn btn-primary" id="confirmBtn" onclick="confirmPayment()" disabled>
+                Confirmer le paiement
+            </button>
+
+            <!-- Success Message -->
+            <div class="success-message" id="successMsg">
+                ✓ Plan sélectionné avec succès !<br>
+                <small>Cliquez sur MTN ou Orange Money pour finaliser</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedPlan = null;
+
+        function selectPlan(planName, element) {
+            // Remove selection from all cards
+            document.querySelectorAll('.plan-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selection to clicked card
+            element.classList.add('selected');
+            selectedPlan = planName;
+
+            // Enable confirm button
+            document.getElementById('confirmBtn').disabled = false;
+        }
+
+        function confirmPayment() {
+            if (!selectedPlan) return;
+
+            const planNames = {
+                'starter': 'Démarrage (5 000 FCFA)',
+                'business': 'Croissance (12 000 FCFA)',
+                'premium': 'Pro annuel (50 000 FCFA)'
+            };
+
+            alert('Plan sélectionné: ' + planNames[selectedPlan] + '\n\nEn prod, vous serez redirigé vers MTN MoMo ou Orange Money pour payer.');
+
+            // Show success message
+            document.getElementById('successMsg').classList.add('show');
+        }
+    </script>
+</body>
+</html>

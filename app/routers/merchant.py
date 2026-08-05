@@ -586,3 +586,12 @@ def add_zone(request: Request, name: str = Form(...), fee: int = Form(0), db: Se
     db.add(models.DeliveryZone(shop_id=shop.id, name=name.strip(), fee=max(0, fee)))
     db.commit()
     return _redirect("/app/settings")
+
+
+@router.get("/payment", response_class=HTMLResponse)
+async def payment_page(request: Request, db: Session = Depends(get_db)):
+    """Page de paiement - choix du plan et moyens de paiement."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    return templates.TemplateResponse(request, "payment.html")
