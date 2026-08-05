@@ -706,8 +706,8 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
                     +237 690088572
                 </div>
 
-                <button class="primary sticky-cta" id="confirmBtn" onclick="confirmPayment()" disabled>
-                    Confirmer le paiement
+                <button class="primary sticky-cta" id="confirmBtn" onclick="confirmPayment()" disabled style="font-size: 18px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0,122,73,0.3); transition: all 0.3s; background: linear-gradient(135deg, #007a49 0%, #005f38 100%); border: none;">
+                    💳 Confirmer le paiement
                 </button>
                 <button id="skipBtn" onclick="window.location.href='/app'">Continuer sans payer</button>
             </section>
