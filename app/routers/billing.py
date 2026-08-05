@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Shop, Subscription, SubscriptionPlan, SubscriptionStatus, utcnow
+from app.models import Shop, Subscription, SubscriptionPlan, SubscriptionStatus, ShopStatus, utcnow
 from app.deps import require_shop_access
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
