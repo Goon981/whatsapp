@@ -1,6 +1,6 @@
 """Gestion des abonnements et paiements."""
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -291,3 +291,85 @@ async def process_payment_sandbox(
         "expires_at": str(sub.current_period_end),
         "message": f"SANDBOX: Paiement simulé - Abonnement {plan} activé pour {duration} mois"
     }
+
+
+@router.post("/campay/initiate")
+async def initiate_campay_payment(
+    shop_id: int,
+    plan: str,
+    phone: str,
+    network: str = "MTN",
+    db: Session = Depends(get_db)
+):
+    """Initie un paiement via Campay (MTN, Orange, Airtel)"""
+
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Boutique non trouvée")
+
+    if plan not in PLAN_PRICES:
+        raise HTTPException(status_code=400, detail="Plan invalide")
+
+    if network not in ["MTN", "ORANGE", "AIRTEL"]:
+        raise HTTPException(status_code=400, detail="Réseau non supporté")
+
+    amount = PLAN_PRICES[plan]
+    reference = f"SHOP{shop_id}_{utcnow().timestamp()}"
+
+    clean_phone = phone.replace("+", "").lstrip("0")
+    if not clean_phone.startswith("237"):
+        clean_phone = "237" + clean_phone
+
+    return {
+        "success": True,
+        "reference": reference,
+        "shop_id": shop_id,
+        "plan": plan,
+        "amount": amount,
+        "phone": clean_phone,
+        "network": network,
+        "message": f"Paiement Campay initié - {network}",
+        "redirect_url": f"/app/payment?reference={reference}&provider=campay"
+    }
+
+
+@router.post("/campay/callback")
+async def campay_webhook(request: Request, db: Session = Depends(get_db)):
+    """Webhook Campay pour confirmer les paiements"""
+
+    data = await request.json()
+
+    reference = data.get("reference")
+    status = data.get("status")
+    amount = data.get("amount")
+    phone = data.get("phone")
+
+    if status == "successful":
+        try:
+            shop_id = int(reference.split("_")[0].replace("SHOP", ""))
+            shop = db.query(Shop).filter(Shop.id == shop_id).first()
+
+            if not shop:
+                return {"error": "Shop not found"}
+
+            plans_map = {5000: "starter", 12000: "business", 50000: "premium"}
+            plan = plans_map.get(amount, "starter")
+
+            durations = {"starter": 1, "business": 3, "premium": 12}
+            duration = durations[plan]
+
+            sub = shop.subscription or Subscription(shop_id=shop_id)
+            sub.plan = SubscriptionPlan[plan.upper()]
+            sub.current_period_end = utcnow() + timedelta(days=duration * 30)
+            sub.status = SubscriptionStatus.ACTIVE
+
+            db.add(sub)
+            shop.trial_expires_at = utcnow() + timedelta(days=duration * 30)
+            db.add(shop)
+            db.commit()
+
+            return {"success": True, "message": "Subscription créée"}
+        except Exception as e:
+            return {"error": str(e)}
+
+    return {"status": status, "reference": reference}

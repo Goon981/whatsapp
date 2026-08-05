@@ -60,6 +60,13 @@ class Settings:
     # Cookie sécurisé uniquement en HTTPS (mettre à True derrière TLS).
     COOKIE_SECURE: bool = _get_bool("SMARTSHOP_COOKIE_SECURE", False)
 
+    # Campay Payment Gateway Configuration
+    CAMPAY_APP_ID: str = os.getenv("CAMPAY_APP_ID", "")
+    CAMPAY_API_USER: str = os.getenv("CAMPAY_API_USER", "")
+    CAMPAY_API_PASSWORD: str = os.getenv("CAMPAY_API_PASSWORD", "")
+    CAMPAY_WEBHOOK_KEY: str = os.getenv("CAMPAY_WEBHOOK_KEY", "")
+    CAMPAY_MODE: str = os.getenv("CAMPAY_MODE", "sandbox")
+
     TEMPLATES_DIR: Path = BASE_DIR / "templates"
     STATIC_DIR: Path = BASE_DIR / "static"
 
