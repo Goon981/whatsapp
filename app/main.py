@@ -30,6 +30,7 @@ from .routers import (
     stats,
     storefront,
     superadmin,
+    uploads,
 )
 from .templating import templates
 
@@ -84,6 +85,7 @@ app.include_router(orders.router)
 app.include_router(payments.router)
 app.include_router(stats.router)
 app.include_router(admin.router)
+app.include_router(uploads.router)
 
 # --- Applications HTML ----------------------------------------------------- #
 app.include_router(storefront.router)
