@@ -94,19 +94,27 @@
         }
 
         .payment-method {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 14px 16px;
             text-align: center;
             cursor: pointer;
             background: #fff;
             transition: all 0.2s;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
 
         .payment-method:hover {
-            border-color: #007a49;
+            border-color: #25d366;
             background: #f0f8f5;
+            box-shadow: 0 3px 8px rgba(37, 211, 102, 0.2);
+        }
+
+        .payment-method:active {
+            transform: scale(0.98);
         }
 
         .support-banner {
@@ -123,6 +131,61 @@
         .support-banner b {
             display: block;
             margin-bottom: 4px;
+        }
+
+        .primary {
+            background: #25d366;
+            color: #fff;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
+        }
+
+        .primary:hover:not(:disabled) {
+            filter: brightness(0.95);
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+        }
+
+        .primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .secondary {
+            background: transparent;
+            color: #25d366;
+            border: 2px solid #25d366;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.2s;
+        }
+
+        .secondary:hover {
+            background: #f0f8f5;
+            box-shadow: 0 2px 8px rgba(37, 211, 102, 0.2);
+        }
+
+        .secondary:active {
+            transform: scale(0.98);
+        }
+
+        .sticky-cta {
+            margin-bottom: 12px;
         }
     </style>
 </head>
@@ -197,11 +260,11 @@
 
             <!-- Confirm Button -->
             <button class="primary sticky-cta" id="confirmBtn" onclick="confirmPayment()" disabled>
-                Confirmer le paiement
+                🔒 Confirmer et payer
             </button>
 
             <!-- Skip Payment Button -->
-            <button class="secondary" onclick="skipPayment()" style="width: 100%; padding: 14px; border: 2px solid #007a49; background: transparent; color: #007a49; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 12px;">
+            <button class="secondary" onclick="skipPayment()">
                 Continuer sans payer
             </button>
         </section>

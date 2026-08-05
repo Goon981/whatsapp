@@ -73,7 +73,7 @@
   // Ajout direct depuis le catalogue (produit sans variante).
   window.quickAdd = function (id, name, price, image) {
     addItem({ product_id: id, variant_id: null, name: name, variant_name: null, price: price, quantity: 1, image: image });
-    flashBadge();
+    window.location.href = "/s/" + SLUG + "/panier";
   };
   function flashBadge() {
     const el = document.getElementById("cart-count");

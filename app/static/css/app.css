@@ -152,11 +152,15 @@ h1, h2, h3 { margin: 0 0 .4em; }
 
 /* "Commander" WhatsApp mini-button on product cards */
 .order-btn {
-  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
-  background: var(--brand-050); color: var(--brand-700); border: none; border-radius: 11px;
-  padding: 9px; font-weight: 700; font-size: .85rem; cursor: pointer; min-height: 40px;
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  background: #25d366; color: #fff; border: none; border-radius: 12px;
+  padding: 11px 14px; font-weight: 700; font-size: .9rem; cursor: pointer; min-height: 44px;
+  transition: filter .15s ease, transform .05s ease, box-shadow .15s ease;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
 }
-.order-btn .wa-ic { width: 16px; height: 16px; }
+.order-btn:hover { filter: brightness(0.95); box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35); }
+.order-btn:active { transform: scale(0.98); }
+.order-btn .wa-ic { width: 18px; height: 18px; }
 
 /* ---------- Formulaires ---------- */
 label { display: block; font-weight: 600; font-size: .88rem; margin: 14px 0 6px; }
