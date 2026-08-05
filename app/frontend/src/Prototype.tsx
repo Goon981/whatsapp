@@ -29,7 +29,7 @@ function BottomNav({ active, go }: { active: string; go: (s: Screen) => void }) 
 }
 
 function Login({ go }: { go: (s: Screen) => void }) {
-  return <div className="auth-page"><div className="brand-mark"><MobileIcon /></div><h1>SmartShop</h1><h2>WhatsApp</h2><p>Votre boutique. Vos clients.<br/>Vos ventes. Sur WhatsApp.</p><div className="auth-card"><label>Téléphone ou e-mail</label><KeyboardInput aria-label="Téléphone ou e-mail" placeholder="+237 6 95 12 34 56"/><label>Mot de passe</label><KeyboardInput aria-label="Mot de passe" placeholder="••••••••"/><button className="primary" onClick={()=>go("home")}>Se connecter</button><button className="text-button" onClick={()=>go("onboarding")}>Créer ma boutique</button></div><small>Simple, sécurisé et pensé pour le Cameroun.</small></div>;
+  return <div className="auth-page"><div className="brand-mark"><MobileIcon /></div><h1>SmartShop</h1><h2>WhatsApp</h2><p>Votre boutique. Vos clients.<br/>Vos ventes. Sur WhatsApp.</p><div className="auth-card"><h3>J'ai déjà une boutique</h3><label>Téléphone ou e-mail</label><KeyboardInput aria-label="Téléphone ou e-mail" placeholder="admin@shopcam.cm"/><label>Mot de passe</label><KeyboardInput aria-label="Mot de passe" placeholder="••••••••"/><button className="primary" onClick={()=>go("home")}>Se connecter</button></div><small>Simple, sécurisé et pensé pour le Cameroun.</small></div>;
 }
 
 function Onboarding({ go }: { go: (s: Screen) => void }) {
