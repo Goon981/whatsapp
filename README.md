@@ -150,3 +150,4 @@ iOS/Flutter complète, marketplace multi-vendeurs, livraison partenaire intégr�
 API WhatsApp Business (notifications automatiques), fidélité avancée, comptabilité,
 multidevise. L'architecture (abstraction paiement, isolation par boutique, API
 documentée) est prête pour ces extensions.
+# Force redeploy
