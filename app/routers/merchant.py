@@ -594,4 +594,121 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
     ctx, redirect = _require_shop(request, db)
     if redirect:
         return redirect
-    return templates.TemplateResponse(request, "payment.html")
+
+    html = """
+    <!doctype html>
+    <html lang="fr">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Abonnement & Paiement - SmartShop</title>
+        <link rel="stylesheet" href="/static/css/app.css">
+        <style>
+            .trial-banner { background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center; }
+            .trial-banner strong { display: block; color: #2e7d32; font-size: 16px; margin-top: 8px; }
+            .trial-banner small { display: block; color: #558b2f; margin-top: 4px; }
+            .plans-grid { display: grid; gap: 12px; margin-bottom: 20px; }
+            .plan-card { border: 2px solid #ddd; border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s; background: #fff; text-align: left; }
+            .plan-card:hover { border-color: #007a49; background: #f0f8f5; }
+            .plan-card.selected { border: 2px solid #007a49; background: #f0f8f5; }
+            .plan-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+            .plan-name { font-weight: 600; color: #007a49; display: block; margin-bottom: 4px; }
+            .plan-price { font-size: 18px; font-weight: bold; color: #007a49; }
+            .plan-per-day { font-size: 12px; color: #999; margin-top: 8px; display: block; }
+            .payment-methods { display: grid; gap: 12px; margin-bottom: 20px; }
+            .payment-method { border: 1px solid #ddd; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; background: #fff; transition: all 0.2s; }
+            .payment-method:hover { border-color: #007a49; background: #f0f8f5; }
+            .support-banner { background: #fff3e0; border: 1px solid #ff9800; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 20px; font-size: 13px; color: #e65100; }
+            #skipBtn { width: 100%; padding: 14px; border: 2px solid #007a49; background: transparent; color: #007a49; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 12px; }
+            #skipBtn:hover { background: #f0f8f5; }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <a href="/app" class="icon-btn">←</a>
+            <strong>Abonnement & Paiement</strong>
+            <span class="top-spacer"></span>
+        </header>
+
+        <main class="container page">
+            <section class="content">
+                <div class="trial-banner">
+                    <div>✓</div>
+                    <strong>Vous avez 14 jours pour payer</strong>
+                    <small>Choisissez un plan ou continuez sans payer pour accéder au tableau de bord</small>
+                </div>
+
+                <h3>Choisissez votre plan</h3>
+                <div class="plans-grid">
+                    <button class="plan-card" onclick="selectPlan('starter', this)">
+                        <div class="plan-header">
+                            <div>
+                                <span class="plan-name">Démarrage</span>
+                                <span style="font-size: 13px; color: #666;">1 mois</span>
+                            </div>
+                            <span class="plan-price">5 000 FCFA</span>
+                        </div>
+                        <span class="plan-per-day">166 FCFA/jour</span>
+                    </button>
+
+                    <button class="plan-card" onclick="selectPlan('business', this)">
+                        <div class="plan-header">
+                            <div>
+                                <span class="plan-name">Croissance</span>
+                                <span style="font-size: 13px; color: #666;">3 mois</span>
+                            </div>
+                            <span class="plan-price">12 000 FCFA</span>
+                        </div>
+                        <span class="plan-per-day">133 FCFA/jour • Économie 3 000 FCFA</span>
+                    </button>
+
+                    <button class="plan-card" onclick="selectPlan('premium', this)">
+                        <div class="plan-header">
+                            <div>
+                                <span class="plan-name">Pro annuel</span>
+                                <span style="font-size: 13px; color: #666;">12 mois</span>
+                            </div>
+                            <span class="plan-price">50 000 FCFA</span>
+                        </div>
+                        <span class="plan-per-day">137 FCFA/jour • Économie 10 000 FCFA</span>
+                    </button>
+                </div>
+
+                <h3>Moyens de paiement</h3>
+                <div class="payment-methods">
+                    <button class="payment-method">📱 MTN Mobile Money</button>
+                    <button class="payment-method">🟠 Orange Money</button>
+                </div>
+
+                <div class="support-banner">
+                    <b>Support :</b><br>
+                    +237 690088572
+                </div>
+
+                <button class="primary sticky-cta" id="confirmBtn" onclick="confirmPayment()" disabled>
+                    Confirmer le paiement
+                </button>
+                <button id="skipBtn" onclick="window.location.href='/app'">Continuer sans payer</button>
+            </section>
+        </main>
+
+        <script>
+            let selectedPlan = null;
+            function selectPlan(planName, element) {
+                document.querySelectorAll('.plan-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                element.classList.add('selected');
+                selectedPlan = planName;
+                document.getElementById('confirmBtn').disabled = false;
+            }
+            function confirmPayment() {
+                if (!selectedPlan) return;
+                const names = {'starter': 'Démarrage (5000)', 'business': 'Croissance (12000)', 'premium': 'Pro (50000)'};
+                alert('Plan: ' + names[selectedPlan] + '\\n\\nRedirigé vers MTN/Orange');
+            }
+        </script>
+    </body>
+    </html>
+    """
+    return html
