@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pathlib import Path
 import os
 import uuid
-from app.dependencies import require_shop_access
+from app.deps import require_shop_access
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
