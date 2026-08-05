@@ -111,7 +111,7 @@ def login_submit(
             request, "merchant/login.html",
             {"mode": "login", "error": "Identifiants invalides."}, status_code=401,
         )
-    resp = _redirect("/app")
+    resp = _redirect("/app/payment")
     _set_session(resp, user)
     return resp
 
