@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un produit - SmartShop</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <style>
+        .photo-zone { border: 2px dashed #007a49; border-radius: 12px; padding: 40px 20px; text-align: center; background: #f0f8f5; cursor: pointer; transition: all 0.2s; }
+        .photo-zone:hover { background: #e8f5e9; }
+        .photo-zone.has-image { border-style: solid; background: #fff; }
+        .photo-preview { position: relative; display: inline-block; margin-bottom: 20px; }
+        .photo-preview img { max-width: 100%; height: auto; border-radius: 8px; }
+        .remove-btn { position: absolute; top: 8px; right: 8px; background: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 18px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .loading { display: none; color: #007a49; font-weight: 600; margin-top: 8px; }
+        .loading.show { display: block; }
+        #imageInput { display: none; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a href="/app/products" class="icon-btn">←</a>
+        <strong>Ajouter un produit</strong>
+        <span class="top-spacer"></span>
+    </header>
+
+    <main class="container page">
+        <section class="content">
+            <form id="productForm" method="post" action="/app/products" style="margin-bottom: 40px;">
+                <!-- Photo Section -->
+                <div class="form-group">
+                    <div id="photoZone" class="photo-zone">
+                        <div id="uploadText">
+                            <div style="font-size: 32px; margin-bottom: 12px;">📷</div>
+                            <div style="font-weight: 600; color: #007a49; font-size: 16px; margin-bottom: 4px;">Cliquez pour ajouter une photo</div>
+                            <div style="font-size: 13px; color: #666;">JPG, PNG, GIF (max 5 MB)</div>
+                        </div>
+                        <div id="previewContainer" style="display: none;">
+                            <img id="preview" style="max-width: 100%; height: auto; border-radius: 8px;">
+                            <button type="button" class="remove-btn" onclick="removePhoto()">✕</button>
+                        </div>
+                        <div id="loading" class="loading">⏳ Chargement...</div>
+                    </div>
+                    <input type="file" id="imageInput" accept="image/*">
+                    <input type="hidden" id="imageUrl" name="image_url">
+                </div>
+
+                <!-- Nom du produit -->
+                <div class="form-group">
+                    <label>Nom du produit</label>
+                    <input type="text" name="name" placeholder="Ex. Robe en wax" required>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" placeholder="Décrivez votre produit..."></textarea>
+                </div>
+
+                <!-- Prix et Stock -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Prix (FCFA)</label>
+                        <input type="number" name="price" placeholder="15 000" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Stock</label>
+                        <input type="number" name="stock" placeholder="10" required>
+                    </div>
+                </div>
+
+                <!-- Catégorie -->
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <select name="category" required>
+                        <option value="">Choisir une catégorie</option>
+                        <option value="Vêtements">Vêtements</option>
+                        <option value="Chaussures">Chaussures</option>
+                        <option value="Accessoires">Accessoires</option>
+                        <option value="Électronique">Électronique</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <!-- Bouton Submit -->
+                <button type="submit" class="primary sticky-cta">Publier le produit</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const photoZone = document.getElementById('photoZone');
+        const imageInput = document.getElementById('imageInput');
+        const uploadText = document.getElementById('uploadText');
+        const previewContainer = document.getElementById('previewContainer');
+        const preview = document.getElementById('preview');
+        const loading = document.getElementById('loading');
+        const imageUrl = document.getElementById('imageUrl');
+
+        // Click zone to open file picker
+        photoZone.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        // Handle file selection
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Show loading
+            loading.classList.add('show');
+            uploadText.style.display = 'none';
+            previewContainer.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/uploads/product-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show preview
+                    preview.src = data.url;
+                    imageUrl.value = data.url;
+                    previewContainer.style.display = 'block';
+                    uploadText.style.display = 'none';
+                    photoZone.classList.add('has-image');
+                } else {
+                    alert('Erreur: ' + (data.error || 'Upload failed'));
+                }
+            } catch (err) {
+                alert('Erreur: ' + err.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        function removePhoto() {
+            imageInput.value = '';
+            imageUrl.value = '';
+            previewContainer.style.display = 'none';
+            uploadText.style.display = 'block';
+            photoZone.classList.remove('has-image');
+        }
+    </script>
+</body>
+</html>

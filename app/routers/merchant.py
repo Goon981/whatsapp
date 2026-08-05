@@ -320,6 +320,15 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
 # --------------------------------------------------------------------------- #
 # Produits
 # --------------------------------------------------------------------------- #
+@router.get("/products/new", response_class=HTMLResponse)
+async def product_new(request: Request, db: Session = Depends(get_db)):
+    """Page d'ajout de produit avec upload d'images."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    return templates.TemplateResponse(request, "product_add.html")
+
+
 @router.get("/products", response_class=HTMLResponse)
 def products_page(
     request: Request, db: Session = Depends(get_db),
