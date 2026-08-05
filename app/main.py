@@ -136,6 +136,10 @@ def serve_app(request: Request, path: str = ""):
     with open(index_file, "r", encoding="utf-8") as f:
         html = f.read()
 
+    # Corriger les chemins des assets pour qu'ils pointent vers /static/dist/assets/
+    html = html.replace('src="/assets/', 'src="/static/dist/assets/')
+    html = html.replace('href="/assets/', 'href="/static/dist/assets/')
+
     # Injecter les variables d'env pour le frontend
     env_script = f"""
     <script>
