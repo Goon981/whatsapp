@@ -245,3 +245,49 @@ async def validate_payment(
         "expires_at": sub.expires_at,
         "dashboard_url": f"/app?shop_id={payment.shop_id}"
     }
+
+
+@router.post("/process-payment-sandbox")
+async def process_payment_sandbox(
+    shop_id: int,
+    plan: str,
+    db: Session = Depends(get_db)
+):
+    """Endpoint TEST SANDBOX pour traiter les paiements (sans API réelle).
+
+    À utiliser UNIQUEMENT pour les tests. En production, utiliser MTN MoMo/Orange Money.
+    """
+
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Boutique non trouvée")
+
+    if plan not in PLAN_PRICES:
+        raise HTTPException(status_code=400, detail="Plan invalide")
+
+    # Montant exact requis
+    required_amount = PLAN_PRICES[plan]
+    durations = {"starter": 1, "business": 3, "premium": 12}
+    duration = durations[plan]
+
+    # Créer ou mettre à jour la subscription
+    sub = shop.subscription or Subscription(shop_id=shop_id)
+    sub.plan = plan  # Stocker comme string (vérifier le schéma)
+    sub.expires_at = utcnow() + timedelta(days=duration * 30)
+    sub.status = "ACTIVE"
+
+    db.add(sub)
+
+    # Mettre aussi à jour trial_expires_at pour que le trial apparaisse comme payé
+    shop.trial_expires_at = utcnow() + timedelta(days=duration * 30)
+    db.add(shop)
+    db.commit()
+
+    return {
+        "success": True,
+        "plan": plan,
+        "amount": required_amount,
+        "duration_months": duration,
+        "expires_at": sub.expires_at.isoformat() if hasattr(sub.expires_at, 'isoformat') else str(sub.expires_at),
+        "message": f"SANDBOX: Paiement simulé - Abonnement {plan} activé pour {duration} mois"
+    }
