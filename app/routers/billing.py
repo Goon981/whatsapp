@@ -15,8 +15,8 @@ TRIAL_DAYS = 14
 
 PLAN_PRICES = {
     "starter": 5000,      # 1 mois
-    "business": 15000,    # 3 mois
-    "premium": 50000,     # 12 mois (annuel)
+    "business": 12000,    # 3 mois (4000/mois)
+    "premium": 50000,     # 12 mois (4166/mois)
 }
 
 
@@ -34,6 +34,14 @@ class PaymentRequest(BaseModel):
     phone: str         # Numéro MTN/Orange
 
 
+class PaymentConfirmation(BaseModel):
+    """Confirmation de paiement reçu (webhook)."""
+    shop_id: int
+    plan: str
+    amount_paid: int   # Montant reçu en FCFA
+    reference: str     # Référence du paiement
+
+
 @router.get("/plans")
 async def get_plans():
     """Lister tous les plans disponibles."""
@@ -48,8 +56,8 @@ async def get_plans():
             {
                 "name": "business",
                 "duration_months": 3,
-                "price": 15000,
-                "description": "3 mois (5000/mois)"
+                "price": 12000,
+                "description": "3 mois (4000/mois) - Economie 3,000 FCFA"
             },
             {
                 "name": "premium",
@@ -124,31 +132,51 @@ async def get_subscription_status(
         }
 
 
-@router.post("/create-subscription")
-async def create_subscription(
-    shop_id: int,
-    plan: str,
+@router.post("/validate-payment")
+async def validate_payment(
+    payment: PaymentConfirmation,
     db: Session = Depends(get_db)
 ):
-    """Créer une subscription après paiement.
+    """Valider et confirmer le paiement AVANT de créer la subscription.
 
-    Simulation: en prod, appelé par le webhook de paiement (MTN/Orange).
+    Vérifie que le montant payé correspond EXACTEMENT au plan.
+    Si le montant est insuffisant, rejette la transaction.
     """
 
-    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    shop = db.query(Shop).filter(Shop.id == payment.shop_id).first()
     if not shop:
         raise HTTPException(status_code=404, detail="Boutique non trouvée")
 
-    if plan not in PLAN_PRICES:
+    if payment.plan not in PLAN_PRICES:
         raise HTTPException(status_code=400, detail="Plan invalide")
 
-    # Déterminer la durée en mois
-    durations = {"starter": 1, "business": 3, "premium": 12}
-    duration = durations[plan]
+    # Vérifier que le montant est EXACTEMENT correct
+    required_amount = PLAN_PRICES[payment.plan]
+    if payment.amount_paid < required_amount:
+        return {
+            "success": False,
+            "error": "MONTANT_INSUFFISANT",
+            "message": f"Montant insuffisant: {payment.amount_paid} FCFA reçu, {required_amount} FCFA requis",
+            "required_amount": required_amount,
+            "received_amount": payment.amount_paid,
+            "shortfall": required_amount - payment.amount_paid
+        }
 
-    # Créer/update la subscription
-    sub = shop.subscription or Subscription(shop_id=shop_id)
-    sub.plan = SubscriptionPlan[plan.upper()]
+    if payment.amount_paid > required_amount:
+        return {
+            "success": False,
+            "error": "MONTANT_EXCESSIF",
+            "message": f"Montant excessif: {payment.amount_paid} FCFA reçu, {required_amount} FCFA attendu",
+            "required_amount": required_amount,
+            "received_amount": payment.amount_paid
+        }
+
+    # Montant exact ✓ → créer la subscription
+    durations = {"starter": 1, "business": 3, "premium": 12}
+    duration = durations[payment.plan]
+
+    sub = shop.subscription or Subscription(shop_id=payment.shop_id)
+    sub.plan = SubscriptionPlan[payment.plan.upper()]
     sub.expires_at = utcnow() + timedelta(days=duration * 30)
     sub.status = SubscriptionStatus.ACTIVE
 
@@ -157,7 +185,8 @@ async def create_subscription(
 
     return {
         "success": True,
-        "message": f"Abonnement {plan} activate pour {duration} mois",
+        "message": f"Paiement accepté. Abonnement {payment.plan} activé pour {duration} mois",
+        "reference": payment.reference,
         "expires_at": sub.expires_at,
-        "dashboard_url": f"/app?shop_id={shop_id}"
+        "dashboard_url": f"/app?shop_id={payment.shop_id}"
     }
