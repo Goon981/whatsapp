@@ -5,12 +5,13 @@ import uuid
 from app.deps import get_current_user
 from app.database import get_db
 from app import models
+from app.config import settings
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
 # Créer les dossiers s'ils n'existent pas
-UPLOAD_DIR = Path("static/uploads")
+UPLOAD_DIR = settings.STATIC_DIR / "uploads"
 PRODUCT_DIR = UPLOAD_DIR / "products"
 SHOP_DIR = UPLOAD_DIR / "shops"
 
