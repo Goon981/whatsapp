@@ -326,7 +326,127 @@ async def product_new(request: Request, db: Session = Depends(get_db)):
     ctx, redirect = _require_shop(request, db)
     if redirect:
         return redirect
-    return templates.TemplateResponse(request, "product_add.html")
+
+    html = """<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un produit - SmartShop</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <style>
+        .photo-zone { border: 2px dashed #007a49; border-radius: 12px; padding: 40px 20px; text-align: center; background: #f0f8f5; cursor: pointer; margin-bottom: 20px; }
+        .photo-zone:hover { background: #e8f5e9; }
+        #preview { max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px; display: none; }
+        #imageInput { display: none; }
+        .loading { color: #007a49; font-weight: 600; display: none; }
+        .loading.show { display: block; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a href="/app/products" class="icon-btn">←</a>
+        <strong>Ajouter un produit</strong>
+        <span class="top-spacer"></span>
+    </header>
+
+    <main class="container page">
+        <section class="content">
+            <form id="productForm" method="post" action="/app/products">
+                <!-- ZONE D'UPLOAD D'IMAGES -->
+                <div class="photo-zone" onclick="document.getElementById('imageInput').click()">
+                    <div style="font-size: 48px; margin-bottom: 12px;">📷</div>
+                    <div style="font-weight: 600; color: #007a49; font-size: 16px; margin-bottom: 4px;">Cliquez pour ajouter une photo</div>
+                    <div style="font-size: 13px; color: #666;">JPG, PNG, GIF - Max 5 MB</div>
+                </div>
+
+                <img id="preview">
+                <div id="loading" class="loading">⏳ Chargement...</div>
+                <input type="file" id="imageInput" accept="image/*">
+                <input type="hidden" id="imageUrl" name="image_url">
+
+                <!-- FORMULAIRE PRODUIT -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nom du produit *</label>
+                    <input type="text" name="name" placeholder="Ex. Robe en wax" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Description</label>
+                    <textarea name="description" placeholder="Décrivez votre produit..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; resize: vertical; min-height: 100px;"></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Prix (FCFA) *</label>
+                        <input type="number" name="price" placeholder="15 000" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Stock</label>
+                        <input type="number" name="stock" placeholder="10" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Catégorie</label>
+                    <select name="category" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                        <option value="">Choisir une catégorie</option>
+                        <option value="Vêtements">Vêtements</option>
+                        <option value="Chaussures">Chaussures</option>
+                        <option value="Accessoires">Accessoires</option>
+                        <option value="Électronique">Électronique</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="primary sticky-cta">Publier le produit</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const preview = document.getElementById('preview');
+        const loading = document.getElementById('loading');
+        const imageUrl = document.getElementById('imageUrl');
+        const photoZone = document.querySelector('.photo-zone');
+
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            loading.classList.add('show');
+            photoZone.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/uploads/product-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    preview.src = data.url;
+                    preview.style.display = 'block';
+                    imageUrl.value = data.url;
+                } else {
+                    alert('Erreur: ' + (data.error || 'Upload echoue'));
+                }
+            } catch (err) {
+                alert('Erreur: ' + err.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
+    """
+    return html
 
 
 @router.get("/products", response_class=HTMLResponse)
