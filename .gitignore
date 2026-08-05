@@ -8,5 +8,5 @@ __pycache__/
 smartshop.db
 app/frontend/node_modules/
 app/frontend/dist/
-app/static/dist/
+# app/static/dist/  # Inclure les fichiers compilés pour Railway
 smartshop-whatsapp/
