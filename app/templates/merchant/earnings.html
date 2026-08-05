@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mes Revenus - SmartShop</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <style>
+        .earnings-header {
+            background: linear-gradient(135deg, #25d366 0%, #128c4f 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .earnings-stat {
+            text-align: center;
+            padding: 16px;
+        }
+        .earnings-stat .label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .earnings-stat .amount {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .earnings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-card .label {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .stat-card .amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: #25d366;
+        }
+        .withdraw-btn {
+            background: #25d366;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 24px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .withdraw-btn:hover {
+            filter: brightness(0.95);
+        }
+        .withdraw-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .payment-table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #eee;
+        }
+        .payment-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .payment-table tr:hover {
+            background: #f9f9f9;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-paid {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-pending {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .status-withdrawn {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a href="/app/dashboard" class="icon-btn">←</a>
+        <strong>Mes Revenus</strong>
+        <span class="top-spacer"></span>
+    </header>
+
+    <main class="container page">
+        <section class="content">
+            <!-- Total Earnings Header -->
+            <div class="earnings-header">
+                <div class="earnings-stat">
+                    <div class="label">Revenus totaux</div>
+                    <div class="amount" id="totalEarnings">0 FCFA</div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="earnings-grid">
+                <div class="stat-card">
+                    <div class="label">Disponible</div>
+                    <div class="amount" id="availableEarnings">0 FCFA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">En attente</div>
+                    <div class="amount" id="pendingEarnings">0 FCFA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Retiré</div>
+                    <div class="amount" id="withdrawnEarnings">0 FCFA</div>
+                </div>
+            </div>
+
+            <!-- Withdraw Button -->
+            <button class="withdraw-btn" id="withdrawBtn" onclick="initiateWithdraw()" disabled>
+                💳 Retirer les revenus
+            </button>
+
+            <!-- Transactions Table -->
+            <h3>Historique des paiements</h3>
+            <div id="paymentsContainer">
+                <table class="payment-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Montant</th>
+                            <th>Référence</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody">
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                <div class="icon">💰</div>
+                                <div>Aucun paiement reçu pour l'instant</div>
+                                <div style="font-size: 13px; margin-top: 8px;">Vos paiements apparaîtront ici</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Info -->
+            <div style="background: #f0f8f5; border-left: 4px solid #25d366; padding: 16px; margin-top: 24px; border-radius: 4px;">
+                <strong style="color: #25d366;">💡 Comment ça marche?</strong>
+                <ul style="margin: 12px 0 0 20px; font-size: 14px; color: #666;">
+                    <li>Chaque paiement client est reçu via Campay</li>
+                    <li>SmartShop prend 5% de commission (pour frais d'hébergement)</li>
+                    <li>Vous recevez 95% du montant</li>
+                    <li>Cliquez "Retirer" pour transférer à votre compte Campay</li>
+                    <li>Le retrait est instantané vers votre wallet</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Données de test - à remplacer par API réelle
+        const payments = [
+            { date: '2026-08-05', amount: 5000, reference: 'SHOP1_ABC123', status: 'paid' },
+            { date: '2026-08-04', amount: 12000, reference: 'SHOP1_DEF456', status: 'paid' },
+        ];
+
+        function formatCurrency(amount) {
+            return (amount || 0).toLocaleString('fr-FR') + ' FCFA';
+        }
+
+        function loadEarnings() {
+            const totalEarnings = payments.reduce((sum, p) => sum + (p.status === 'paid' ? p.amount : 0), 0);
+            const commission = totalEarnings * 0.05;
+            const netEarnings = totalEarnings - commission;
+
+            document.getElementById('totalEarnings').textContent = formatCurrency(totalEarnings);
+            document.getElementById('availableEarnings').textContent = formatCurrency(netEarnings);
+            document.getElementById('pendingEarnings').textContent = formatCurrency(0);
+            document.getElementById('withdrawnEarnings').textContent = formatCurrency(0);
+
+            document.getElementById('withdrawBtn').disabled = netEarnings <= 0;
+
+            // Load payments table
+            const tbody = document.getElementById('paymentsTableBody');
+            if (payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <div class="icon">💰</div>
+                            <div>Aucun paiement reçu pour l'instant</div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = payments.map(p => `
+                    <tr>
+                        <td>${new Date(p.date).toLocaleDateString('fr-FR')}</td>
+                        <td><strong>${formatCurrency(p.amount)}</strong></td>
+                        <td><code style="font-size: 12px;">${p.reference}</code></td>
+                        <td><span class="status-badge status-${p.status}">${p.status === 'paid' ? '✓ Payé' : 'En attente'}</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function initiateWithdraw() {
+            const available = parseFloat(document.getElementById('availableEarnings').textContent.replace(/[^0-9]/g, ''));
+            if (available <= 0) {
+                alert('Aucun revenu à retirer');
+                return;
+            }
+
+            if (confirm(`Retirer ${formatCurrency(available)} vers votre compte Campay?`)) {
+                alert('✓ Retrait initié!\n\nL\'argent devrait arriver dans votre wallet Campay dans 1-2 minutes.');
+                // API call would go here
+            }
+        }
+
+        loadEarnings();
+    </script>
+</body>
+</html>

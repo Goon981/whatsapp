@@ -889,3 +889,13 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
     </html>
     """
     return html
+
+
+@router.get("/earnings", response_class=HTMLResponse)
+async def earnings_page(request: Request, db: Session = Depends(get_db)):
+    """Page des revenus et retraits."""
+    (user, shop), redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+
+    return templates.TemplateResponse(request, "merchant/earnings.html", {"shop": shop, "user": user})
