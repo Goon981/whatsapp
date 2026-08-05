@@ -132,6 +132,61 @@ async def get_subscription_status(
         }
 
 
+@router.post("/check-expiry-and-notify")
+async def check_expiry_and_notify(db: Session = Depends(get_db)):
+    """Vérifier expiration et envoyer notifications WhatsApp.
+
+    À appeler via cron job toutes les heures (en prod).
+    """
+
+    now = utcnow()
+    shops = db.query(Shop).filter(Shop.is_deleted.is_(False)).all()
+
+    notifications_sent = 0
+    suspensions_done = 0
+
+    for shop in shops:
+        # Vérifier trial
+        if shop.trial_expires_at:
+            days_left = (shop.trial_expires_at - now).days
+
+            # Notification 3 jours avant expiration du trial
+            if days_left == 3:
+                wa_url = f"https://wa.me/{shop.phone_number}?text=Votre%20trial%20SmartShop%20expire%20dans%203%20jours.%20Passez%20à%20un%20abonnement%20payant%20pour%20continuer.%20https://shopcam237.com/app/payment"
+                # En prod: appel HTTP à Twilio/gupshup pour envoyer le SMS/WhatsApp
+                notifications_sent += 1
+
+            # Bloquer la boutique si trial expiré et pas de paiement
+            if days_left <= 0 and not shop.subscription:
+                shop.status = ShopStatus.SUSPENDED
+                db.add(shop)
+                suspensions_done += 1
+
+        # Vérifier subscription
+        sub = shop.subscription
+        if sub and sub.expires_at:
+            days_left = (sub.expires_at - now).days
+
+            # Notification 3 jours avant expiration de l'abonnement
+            if days_left == 3:
+                wa_url = f"https://wa.me/{shop.phone_number}?text=Votre%20abonnement%20SmartShop%20expire%20dans%203%20jours.%20Renouvelez%20pour%20rester%20actif.%20https://shopcam237.com/app/payment"
+                notifications_sent += 1
+
+            # Suspendre si subscription expirée
+            if days_left <= 0:
+                shop.status = ShopStatus.SUSPENDED
+                db.add(shop)
+                suspensions_done += 1
+
+    db.commit()
+
+    return {
+        "notifications_sent": notifications_sent,
+        "suspensions_done": suspensions_done,
+        "timestamp": now
+    }
+
+
 @router.post("/validate-payment")
 async def validate_payment(
     payment: PaymentConfirmation,
