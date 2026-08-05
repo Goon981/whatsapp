@@ -1,5 +1,5 @@
 """Endpoint de setup initial (créer superadmin)."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, UserRole
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/setup", tags=["setup"])
 
 
 @router.post("/create-superadmin")
-async def create_superadmin(db: Session = next(get_db())):
+async def create_superadmin(db: Session = Depends(get_db)):
     """Créer le compte superadmin.
 
     ⚠️ À exécuter UNE SEULE FOIS après déploiement.
