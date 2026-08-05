@@ -2,7 +2,10 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pathlib import Path
 import os
 import uuid
-from app.deps import require_shop_access
+from app.deps import get_current_user
+from app.database import get_db
+from app import models
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
@@ -32,11 +35,24 @@ def validate_image(file: UploadFile) -> bool:
 
 
 @router.post("/product-image")
-async def upload_product_image(file: UploadFile = File(...), shop_id: int = Depends(require_shop_access)):
+async def upload_product_image(
+    file: UploadFile = File(...),
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Upload une image de produit"""
 
     try:
         validate_image(file)
+
+        # Récupérer la boutique de l'utilisateur
+        shop = db.query(models.Shop).filter(
+            models.Shop.owner_id == user.id,
+            models.Shop.is_deleted.is_(False)
+        ).first()
+
+        if not shop:
+            raise HTTPException(status_code=404, detail="Boutique non trouvée")
 
         # Générer un nom unique
         file_ext = file.filename.split('.')[-1].lower()
@@ -57,20 +73,35 @@ async def upload_product_image(file: UploadFile = File(...), shop_id: int = Depe
             "filename": unique_filename
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/shop-logo")
-async def upload_shop_logo(file: UploadFile = File(...), shop_id: int = Depends(require_shop_access)):
+async def upload_shop_logo(
+    file: UploadFile = File(...),
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Upload le logo d'une boutique"""
 
     try:
         validate_image(file)
 
+        # Récupérer la boutique de l'utilisateur
+        shop = db.query(models.Shop).filter(
+            models.Shop.owner_id == user.id,
+            models.Shop.is_deleted.is_(False)
+        ).first()
+
+        if not shop:
+            raise HTTPException(status_code=404, detail="Boutique non trouvée")
+
         # Utiliser shop_id comme nom
         file_ext = file.filename.split('.')[-1].lower()
-        filename = f"shop_{shop_id}.{file_ext}"
+        filename = f"shop_{shop.id}.{file_ext}"
         filepath = SHOP_DIR / filename
 
         # Sauvegarder
@@ -86,5 +117,7 @@ async def upload_shop_logo(file: UploadFile = File(...), shop_id: int = Depends(
             "filename": filename
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
