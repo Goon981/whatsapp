@@ -23,6 +23,7 @@ from .routers import (
     admin,
     auth,
     catalog,
+    invitations,
     merchant,
     orders,
     payments,
@@ -86,6 +87,7 @@ app.include_router(payments.router)
 app.include_router(stats.router)
 app.include_router(admin.router)
 app.include_router(uploads.router)
+app.include_router(invitations.router)
 
 # --- Applications HTML ----------------------------------------------------- #
 app.include_router(storefront.router)

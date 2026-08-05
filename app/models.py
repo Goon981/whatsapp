@@ -148,6 +148,7 @@ class Shop(Base):
     status: Mapped[ShopStatus] = mapped_column(Enum(ShopStatus), default=ShopStatus.ACTIVE)
     suspended_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    trial_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     owner: Mapped["User"] = relationship(back_populates="owned_shops")
