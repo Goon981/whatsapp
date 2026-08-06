@@ -4,9 +4,49 @@
   <h1 class="page-title">Créez votre boutique</h1>
   <p class="muted">Quelques informations et votre boutique est en ligne. Vous pourrez tout modifier ensuite.</p>
   {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
-  <form method="post" action="/app/onboarding" class="card">
+  <form method="post" action="/app/onboarding" class="card" enctype="multipart/form-data">
     <label for="name">Nom de la boutique *</label>
     <input id="name" name="name" required placeholder="Chez Amina">
+
+    <label for="logo">Logo de la boutique</label>
+    <div style="border: 2px dashed #ddd; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: #f9f9f9;" id="logo-drop-zone">
+      <input id="logo" type="file" name="logo" accept="image/*" style="display: none;" onchange="showLogoPreview(this)">
+      <div id="logo-placeholder">
+        <div style="font-size: 2rem; margin-bottom: 8px;">📸</div>
+        <p style="margin: 0; color: #666;">Cliquez ou glissez votre logo ici</p>
+        <p class="hint">JPG, PNG, GIF ou WebP (max 5MB)</p>
+      </div>
+      <img id="logo-preview" style="max-width: 100%; max-height: 150px; display: none; margin-top: 10px;" />
+    </div>
+    <script>
+      var dropZone = document.getElementById('logo-drop-zone');
+      var logoInput = document.getElementById('logo');
+      var placeholder = document.getElementById('logo-placeholder');
+      var preview = document.getElementById('logo-preview');
+
+      dropZone.addEventListener('click', function() { logoInput.click(); });
+      dropZone.addEventListener('dragover', function(e) { e.preventDefault(); this.style.background = '#e8f5f1'; });
+      dropZone.addEventListener('dragleave', function() { this.style.background = '#f9f9f9'; });
+      dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.background = '#f9f9f9';
+        logoInput.files = e.dataTransfer.files;
+        showLogoPreview(logoInput);
+      });
+
+      function showLogoPreview(input) {
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            placeholder.style.display = 'none';
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+    </script>
+
     <label for="sector">Secteur</label>
     <select id="sector" name="sector" onchange="toggleOther(this.value)">
       <option value="restaurant">Restaurant</option>

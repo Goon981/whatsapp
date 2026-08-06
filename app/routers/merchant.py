@@ -222,6 +222,7 @@ def onboarding_submit(
     theme_color: str = Form("#128C7E"),
     secondary_color: str = Form("#E8F5F1"),
     text_color: str = Form("#333333"),
+    logo: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
     user = _current_user(request, db)
@@ -230,11 +231,33 @@ def onboarding_submit(
     # Secteur libre saisi via l'option « Autre ».
     if sector == "autre" and sector_other.strip():
         sector = sector_other.strip()
+
+    logo_url = None
+    if logo and logo.filename:
+        try:
+            upload_dir = Path(settings.STATIC_DIR) / "uploads" / "shops"
+            upload_dir.mkdir(parents=True, exist_ok=True)
+
+            file_ext = logo.filename.split('.')[-1].lower()
+            filename = f"logo_{uuid.uuid4()}.{file_ext}"
+            filepath = upload_dir / filename
+
+            content = logo.file.read()
+            if len(content) > 5 * 1024 * 1024:
+                pass
+            else:
+                with open(filepath, "wb") as f:
+                    f.write(content)
+                logo_url = f"/static/uploads/shops/{filename}"
+        except Exception:
+            pass
+
     shop = models.Shop(
         owner_id=user.id, name=name, slug=unique_shop_slug(db, name), sector=sector,
         whatsapp_number=whatsapp_number, contact_phone=whatsapp_number, city=city or None,
         status=models.ShopStatus.ACTIVE,
         theme_color=theme_color, secondary_color=secondary_color, text_color=text_color,
+        logo_url=logo_url,
     )
     db.add(shop)
     db.flush()
