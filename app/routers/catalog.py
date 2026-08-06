@@ -209,57 +209,64 @@ def list_product_images(
     )
 
 
-@router.post("/products/{product_id}/images", response_model=schemas.ProductImageOut, status_code=201)
+@router.post("/products/{product_id}/images", response_model=list[schemas.ProductImageOut], status_code=201)
 async def upload_product_image(
     product_id: int,
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
     access=Depends(require_permission("catalog")),
     db: Session = Depends(get_db),
 ):
-    """Upload une image pour la galerie du produit."""
+    """Upload une ou plusieurs images pour la galerie du produit."""
     shop, _ = access
     product = _get_owned_product(db, shop.id, product_id)
 
-    # Validation du fichier
-    if file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
-        raise HTTPException(status_code=400, detail="Format d'image non autorisé")
+    if not files:
+        raise HTTPException(status_code=400, detail="Aucun fichier fourni")
 
-    ext = file.filename.split('.')[-1].lower()
-    if ext not in {"jpg", "jpeg", "png", "gif", "webp"}:
-        raise HTTPException(status_code=400, detail="Extension non autorisée")
-
-    # Sauvegarder l'image
     upload_dir = settings.STATIC_DIR / "uploads" / "products"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    filename = f"{uuid.uuid4()}.{ext}"
-    filepath = upload_dir / filename
-
-    content = await file.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 5MB)")
-
-    with open(filepath, "wb") as f:
-        f.write(content)
-
-    # Créer l'entry ProductImage
     max_position = (
         db.query(func.max(models.ProductImage.position))
         .filter(models.ProductImage.product_id == product_id)
         .scalar()
     ) or 0
 
-    image = models.ProductImage(
-        shop_id=shop.id,
-        product_id=product_id,
-        image_url=f"/static/uploads/products/{filename}",
-        position=max_position + 1,
-        is_primary=False,
-    )
-    db.add(image)
+    images = []
+    for file in files:
+        # Validation du fichier
+        if file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
+            raise HTTPException(status_code=400, detail=f"Format d'image non autorisé: {file.filename}")
+
+        ext = file.filename.split('.')[-1].lower()
+        if ext not in {"jpg", "jpeg", "png", "gif", "webp"}:
+            raise HTTPException(status_code=400, detail=f"Extension non autorisée: {ext}")
+
+        content = await file.read()
+        if len(content) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail=f"Fichier trop volumineux: {file.filename}")
+
+        filename = f"{uuid.uuid4()}.{ext}"
+        filepath = upload_dir / filename
+
+        with open(filepath, "wb") as f:
+            f.write(content)
+
+        max_position += 1
+        image = models.ProductImage(
+            shop_id=shop.id,
+            product_id=product_id,
+            image_url=f"/static/uploads/products/{filename}",
+            position=max_position,
+            is_primary=False,
+        )
+        db.add(image)
+        images.append(image)
+
     db.commit()
-    db.refresh(image)
-    return image
+    for img in images:
+        db.refresh(img)
+    return images
 
 
 @router.delete("/products/{product_id}/images/{image_id}", status_code=200)
