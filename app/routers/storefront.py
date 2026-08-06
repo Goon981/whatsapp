@@ -13,7 +13,7 @@ from ..database import get_db
 from ..templating import templates
 from ..services.whatsapp import build_wa_link
 
-router = APIRouter(tags=["storefront"], include_in_schema=False)
+router = APIRouter(tags=["storefront"], include_in_schema=False, prefix="")
 
 _STATUS_LABELS = {
     "new": "Nouvelle",
