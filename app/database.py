@@ -63,6 +63,10 @@ def _auto_migrate() -> None:
             "last_payment_at": "DATETIME",
             "suspended_for_nonpayment": "BOOLEAN DEFAULT 0",
         },
+        "shops": {
+            "accept_airtel_money": "BOOLEAN DEFAULT 1",
+            "accept_card": "BOOLEAN DEFAULT 1",
+        },
     }
     with engine.begin() as conn:
         for table, cols in additions.items():

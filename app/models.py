@@ -67,6 +67,8 @@ class OrderStatus(str, enum.Enum):
 class PaymentMethod(str, enum.Enum):
     MTN_MOMO = "mtn_momo"
     ORANGE_MONEY = "orange_money"
+    AIRTEL_MONEY = "airtel_money"
+    CARD = "card"
     CASH_ON_DELIVERY = "cash_on_delivery"
 
 
@@ -143,6 +145,8 @@ class Shop(Base):
     accept_cash_on_delivery: Mapped[bool] = mapped_column(Boolean, default=True)
     accept_mtn_momo: Mapped[bool] = mapped_column(Boolean, default=True)
     accept_orange_money: Mapped[bool] = mapped_column(Boolean, default=True)
+    accept_airtel_money: Mapped[bool] = mapped_column(Boolean, default=True)
+    accept_card: Mapped[bool] = mapped_column(Boolean, default=True)
     # Réserver le stock à la confirmation (True) ou au paiement (False) — RM-04.
     reserve_stock_on_confirm: Mapped[bool] = mapped_column(Boolean, default=True)
     status: Mapped[ShopStatus] = mapped_column(Enum(ShopStatus), default=ShopStatus.ACTIVE)

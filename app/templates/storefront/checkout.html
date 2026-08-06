@@ -53,6 +53,20 @@
         <span class="radio"></span>
         <input type="radio" name="payment_method" value="orange_money" class="hide">
       </label>{% endif %}
+      {% if shop.accept_airtel_money %}
+      <label class="pay-opt" id="opt-am" onclick="pickPay('airtel_money')">
+        <div class="pm-ic pm-am">AT</div>
+        <div><div class="pm-t1">Airtel Money</div><div class="pm-t2">Payer avec Airtel Money</div></div>
+        <span class="radio"></span>
+        <input type="radio" name="payment_method" value="airtel_money" class="hide">
+      </label>{% endif %}
+      {% if shop.accept_card %}
+      <label class="pay-opt" id="opt-card" onclick="pickPay('card')">
+        <div class="pm-ic pm-card">💳</div>
+        <div><div class="pm-t1">Carte bancaire</div><div class="pm-t2">Visa, Mastercard, etc.</div></div>
+        <span class="radio"></span>
+        <input type="radio" name="payment_method" value="card" class="hide">
+      </label>{% endif %}
       {% if shop.accept_cash_on_delivery %}
       <label class="pay-opt" id="opt-cod" onclick="pickPay('cash_on_delivery')">
         <div class="pm-ic pm-cod">💵</div>
@@ -83,7 +97,7 @@
 <script>
   function pickPay(v){
     document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('active'));
-    var map = {mtn_momo:'opt-mtn', orange_money:'opt-om', cash_on_delivery:'opt-cod'};
+    var map = {mtn_momo:'opt-mtn', orange_money:'opt-om', airtel_money:'opt-am', card:'opt-card', cash_on_delivery:'opt-cod'};
     var el = document.getElementById(map[v]);
     if (el){ el.classList.add('active'); el.querySelector('input').checked = true; }
   }
