@@ -310,7 +310,7 @@ async def initiate_campay_payment(
     if plan not in PLAN_PRICES:
         raise HTTPException(status_code=400, detail="Plan invalide")
 
-    if network not in ["MTN", "ORANGE", "AIRTEL"]:
+    if network not in ["MTN", "ORANGE", "AIRTEL", "CARD"]:
         raise HTTPException(status_code=400, detail="Réseau non supporté")
 
     amount = PLAN_PRICES[plan]

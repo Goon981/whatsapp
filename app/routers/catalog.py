@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from pathlib import Path
 import os
 import uuid
@@ -243,7 +244,7 @@ async def upload_product_image(
 
     # Créer l'entry ProductImage
     max_position = (
-        db.query(db.func.max(models.ProductImage.position))
+        db.query(func.max(models.ProductImage.position))
         .filter(models.ProductImage.product_id == product_id)
         .scalar()
     ) or 0
