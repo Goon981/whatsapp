@@ -33,6 +33,56 @@
     <input id="whatsapp_number" name="whatsapp_number" required placeholder="+2376XXXXXXXX">
     <label for="city">Ville</label>
     <input id="city" name="city" placeholder="Douala">
+
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #ddd;">
+    <h3 style="margin-bottom: 12px;">Personnalisation du thème</h3>
+    <p class="hint">Choisissez les couleurs de votre boutique pour la rendre unique</p>
+
+    <label for="theme_color">Couleur principale</label>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <input id="theme_color" type="color" name="theme_color" value="#128C7E" style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+      <span id="theme_color_text" class="hint">#128C7E</span>
+    </div>
+
+    <label for="secondary_color">Couleur secondaire</label>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <input id="secondary_color" type="color" name="secondary_color" value="#E8F5F1" style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+      <span id="secondary_color_text" class="hint">#E8F5F1</span>
+    </div>
+
+    <label for="text_color">Couleur du texte</label>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <input id="text_color" type="color" name="text_color" value="#333333" style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+      <span id="text_color_text" class="hint">#333333</span>
+    </div>
+
+    <div style="margin-top: 20px; padding: 16px; background: var(--bg-light); border-radius: 8px; border-left: 4px solid var(--brand);">
+      <strong>Aperçu:</strong>
+      <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 4px;">
+        <button style="background: var(--brand); color: var(--text); padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Exemple bouton</button>
+      </div>
+    </div>
+
+    <script>
+      var themeInput = document.getElementById('theme_color');
+      var secondaryInput = document.getElementById('secondary_color');
+      var textInput = document.getElementById('text_color');
+
+      function updateColors() {
+        document.documentElement.style.setProperty('--brand', themeInput.value);
+        document.documentElement.style.setProperty('--bg-light', secondaryInput.value);
+        document.documentElement.style.setProperty('--text', textInput.value);
+        document.getElementById('theme_color_text').textContent = themeInput.value.toUpperCase();
+        document.getElementById('secondary_color_text').textContent = secondaryInput.value.toUpperCase();
+        document.getElementById('text_color_text').textContent = textInput.value.toUpperCase();
+      }
+
+      themeInput.addEventListener('input', updateColors);
+      secondaryInput.addEventListener('input', updateColors);
+      textInput.addEventListener('input', updateColors);
+      updateColors();
+    </script>
+
     <button class="btn block mt" type="submit">Publier ma boutique</button>
   </form>
 {% endblock %}

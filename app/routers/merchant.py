@@ -219,6 +219,9 @@ def onboarding_submit(
     sector: str = Form("general"),
     sector_other: str = Form(""),
     city: str = Form(""),
+    theme_color: str = Form("#128C7E"),
+    secondary_color: str = Form("#E8F5F1"),
+    text_color: str = Form("#333333"),
     db: Session = Depends(get_db),
 ):
     user = _current_user(request, db)
@@ -231,6 +234,7 @@ def onboarding_submit(
         owner_id=user.id, name=name, slug=unique_shop_slug(db, name), sector=sector,
         whatsapp_number=whatsapp_number, contact_phone=whatsapp_number, city=city or None,
         status=models.ShopStatus.ACTIVE,
+        theme_color=theme_color, secondary_color=secondary_color, text_color=text_color,
     )
     db.add(shop)
     db.flush()
