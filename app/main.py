@@ -125,19 +125,21 @@ def init_admin(db: Session = Depends(get_db)):
     """Initialize superadmin account."""
     admin = db.query(models.User).filter(models.User.email == "admin@shopcam.cm").first()
     if admin:
-        return {"status": "exists", "email": admin.email}
+        db.delete(admin)
+        db.commit()
+    password = "Admin123456"
     admin = models.User(
         full_name="SmartShop Admin",
         email="admin@shopcam.cm",
         phone="+237670000000",
-        password_hash=hash_password("Admin@SmartShop2024!"),
+        password_hash=hash_password(password),
         role=models.UserRole.SUPERADMIN,
         is_active=True,
         phone_verified=True
     )
     db.add(admin)
     db.commit()
-    return {"status": "created", "email": admin.email}
+    return {"status": "created", "email": admin.email, "password": password}
 
 
 # --- Frontend React SPA (fallback) ----------------------------------------- #
