@@ -127,7 +127,7 @@ def shop_home(
     category: int | None = None,
 ):
     shop = _get_public_shop(db, slug)
-    query = db.query(models.Product).filter(
+    query = db.query(models.Product).options(selectinload(models.Product.images)).filter(
         models.Product.shop_id == shop.id,
         models.Product.is_archived.is_(False),
         models.Product.status != models.ProductStatus.HIDDEN,
