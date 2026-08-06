@@ -93,6 +93,24 @@ def init_test_shop(db: Session = Depends(get_db)):
 
     return HTMLResponse(f"<h1>✅ Boutique test créée: {shop.name}</h1><p>URL: /s/{shop.slug}</p>")
 
+@router.get("/init-test-products", response_class=HTMLResponse)
+def init_test_products(db: Session = Depends(get_db)):
+    """Crée des produits de test."""
+    shop = db.query(models.Shop).filter(models.Shop.slug == "test").first()
+    if not shop:
+        return HTMLResponse("<h1>Boutique test non trouvée</h1>")
+
+    # Créer des produits
+    products = [
+        models.Product(shop_id=shop.id, name="T-Shirt Test", price=5000, stock=10),
+        models.Product(shop_id=shop.id, name="Pantalon Test", price=15000, stock=5),
+        models.Product(shop_id=shop.id, name="Chapeau Test", price=3000, stock=20),
+    ]
+    db.add_all(products)
+    db.commit()
+
+    return HTMLResponse(f"<h1>✅ {len(products)} produits créés</h1><p>Visitez: <a href='/s/test'>/s/test</a></p>")
+
 @router.get("/s/{slug}", response_class=HTMLResponse)
 def shop_home(
     slug: str,
