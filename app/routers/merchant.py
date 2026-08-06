@@ -447,15 +447,15 @@ async def product_new(request: Request, db: Session = Depends(get_db)):
         const photoZone = document.querySelector('.photo-zone');
 
         imageInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
 
             loading.classList.add('show');
             photoZone.style.display = 'none';
 
             try {
                 const formData = new FormData();
-                formData.append('file', file);
+                files.forEach(file => formData.append('files', file));
 
                 const response = await fetch('/api/uploads/product-image', {
                     method: 'POST',
@@ -465,9 +465,12 @@ async def product_new(request: Request, db: Session = Depends(get_db)):
                 const data = await response.json();
 
                 if (data.success) {
-                    preview.src = data.url;
-                    preview.style.display = 'block';
-                    imageUrl.value = data.url;
+                    const url = data.url || (data.urls && data.urls[0]);
+                    if (url) {
+                        preview.src = url;
+                        preview.style.display = 'block';
+                        imageUrl.value = url;
+                    }
                 } else {
                     alert('Erreur: ' + (data.error || 'Upload echoue'));
                 }
