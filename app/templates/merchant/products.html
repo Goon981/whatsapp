@@ -33,12 +33,13 @@
         <option value="">— Aucune —</option>
         {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
       </select>
-      <label>Image(s) du produit</label>
+      <label>Images du produit (plusieurs images)</label>
       <div id="uploadZone" style="border:2px dashed #25d366;border-radius:8px;padding:30px;text-align:center;background:#f0f8f5;cursor:pointer;margin-bottom:16px;transition:all 0.2s">
         <div style="font-size:32px;margin-bottom:8px">📸</div>
-        <div style="font-weight:600;color:#25d366;margin-bottom:4px">Déposez vos images ou cliquez</div>
-        <div style="font-size:12px;color:#999">JPG, PNG · Max 5MB chacun</div>
-        <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
+        <div style="font-weight:600;color:#25d366;margin-bottom:4px">Sélectionnez plusieurs photos</div>
+        <div style="font-size:12px;color:#999">JPG, PNG, GIF · Max 5MB chacun</div>
+        <div style="font-size:11px;color:#666;margin-top:8px">Vous pouvez sélectionner 2, 3, 4 images ou plus à la fois</div>
+        <input type="file" id="fileInput" multiple="multiple" accept="image/*" style="display:none">
       </div>
       <div id="imagePreview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:16px"></div>
       <input id="image_url" name="image_url" placeholder="https://… (ou uploadez une image ci-dessus)" style="display:none">
