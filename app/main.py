@@ -16,10 +16,11 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import __version__
+from . import __version__, models
 from .config import settings
 from .database import get_db, init_db
 from .models import Shop, ShopStatus
+from .security import hash_password
 from .routers import (
     admin,
     auth,
@@ -117,6 +118,26 @@ def landing(request: Request):
 @app.get("/health", include_in_schema=False)
 def health():
     return {"status": "ok", "version": __version__}
+
+
+@app.post("/init-admin", include_in_schema=False)
+def init_admin(db: Session = Depends(get_db)):
+    """Initialize superadmin account."""
+    admin = db.query(models.User).filter(models.User.email == "admin@shopcam.cm").first()
+    if admin:
+        return {"status": "exists", "email": admin.email}
+    admin = models.User(
+        full_name="SmartShop Admin",
+        email="admin@shopcam.cm",
+        phone="+237670000000",
+        password_hash=hash_password("Admin@SmartShop2024!"),
+        role=models.UserRole.SUPERADMIN,
+        is_active=True,
+        phone_verified=True
+    )
+    db.add(admin)
+    db.commit()
+    return {"status": "created", "email": admin.email}
 
 
 # --- Frontend React SPA (fallback) ----------------------------------------- #
