@@ -64,6 +64,37 @@ def init_test_shop(db: Session = Depends(get_db)):
 
     return HTMLResponse(f"<h1>✅ Créé!</h1><a href='/s/test'>Visiter</a>")
 
+
+@router.get("/add-test-images", response_class=HTMLResponse)
+def add_test_images(db: Session = Depends(get_db)):
+    """Ajoute des images multiples aux produits de test."""
+    shop = db.query(models.Shop).filter(models.Shop.slug == "test").first()
+    if not shop:
+        return HTMLResponse("<h1>❌ Boutique test non trouvée</h1>")
+
+    products = db.query(models.Product).filter(models.Product.shop_id == shop.id).all()
+
+    images_data = [
+        "/static/uploads/test_image_1.svg",
+        "/static/uploads/test_image_2.svg",
+        "/static/uploads/test_image_3.svg"
+    ]
+
+    for i, product in enumerate(products):
+        for j, img_url in enumerate(images_data):
+            image = models.ProductImage(
+                shop_id=shop.id,
+                product_id=product.id,
+                image_url=img_url,
+                position=j,
+                is_primary=(j == 0)
+            )
+            db.add(image)
+
+    db.commit()
+    count = len(products) * len(images_data)
+    return HTMLResponse(f"<h1>✅ {count} images ajoutées!</h1><a href='/s/test'>Visiter</a>")
+
 _STATUS_LABELS = {
     "new": "Nouvelle",
     "confirmed": "Confirmée",
