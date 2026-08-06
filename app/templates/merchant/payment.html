@@ -260,7 +260,7 @@
     <script>
         let selectedPlan = null;
         let selectedPaymentMethod = null;
-        const SHOP_ID = {{ shop.id if shop else 'null' }};
+        const SHOP_ID = {% if shop %}{{ shop.id }}{% else %}null{% endif %};
 
         function selectPlan(planName, element) {
             document.querySelectorAll('.plan-card').forEach(card => {
