@@ -110,7 +110,7 @@ h1, h2, h3 { margin: 0 0 .4em; }
 
 /* Revenue hero (dashboard + stats) */
 .revenue {
-  background: var(--grad); color: #fff; border-radius: var(--radius); padding: 18px;
+  background: var(--brand); color: #fff; border-radius: var(--radius); padding: 18px;
   box-shadow: var(--shadow-lg); margin-bottom: 14px; position: relative; overflow: hidden;
 }
 .revenue .k { font-size: .85rem; opacity: .9; }
