@@ -22,21 +22,25 @@ router = APIRouter(tags=["storefront"], include_in_schema=False, prefix="")
 
 @router.get("/init-test-shop", response_class=HTMLResponse)
 def init_test_shop(db: Session = Depends(get_db)):
-    """Crée une boutique de test."""
-    existing = db.query(models.Shop).filter(models.Shop.slug == "test").first()
-    if existing:
-        return HTMLResponse(f"<h1>✅ Existe: {existing.name}</h1><a href='/s/test'>Visiter</a>")
+    """Crée une boutique de test si elle n'existe pas."""
+    existing_shop = db.query(models.Shop).filter(models.Shop.slug == "test").first()
+    if existing_shop:
+        return HTMLResponse(f"<h1>✅ Existe déjà</h1><a href='/s/test'>Visiter</a>")
 
-    user = models.User(
-        full_name="Test",
-        email="test@test.com",
-        phone="+237600000000",
-        password_hash="demo_hash",
-        role=models.UserRole.OWNER,
-        is_active=True
-    )
-    db.add(user)
-    db.flush()
+    existing_user = db.query(models.User).filter(models.User.email == "test@test.com").first()
+    if existing_user:
+        user = existing_user
+    else:
+        user = models.User(
+            full_name="Test User",
+            email="test@test.com",
+            phone="+237600000000",
+            password_hash="demo_hash_123",
+            role=models.UserRole.OWNER,
+            is_active=True
+        )
+        db.add(user)
+        db.flush()
 
     shop = models.Shop(
         owner_id=user.id,
