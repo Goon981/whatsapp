@@ -1,9 +1,9 @@
 """Endpoint de setup initial (créer superadmin)."""
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models import User, UserRole
-from app.services.auth import hash_password
+from ..database import get_db
+from ..models import User, UserRole
+from ..services.auth import hash_password
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
 
