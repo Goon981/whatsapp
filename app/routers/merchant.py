@@ -6,9 +6,12 @@ l'utilisateur (RM-05).
 from __future__ import annotations
 
 from datetime import timedelta
+import os
+import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Form, Request, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -945,6 +948,39 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
 
     user, shop = result
     return templates.TemplateResponse(request, "merchant/payment.html", {"shop": shop, "user": user})
+
+
+@router.post("/api/uploads/product-image")
+async def upload_product_image(files: list[UploadFile] = File(...)):
+    """Upload une ou plusieurs images de produit."""
+    if not files:
+        return JSONResponse({"success": False, "error": "Aucun fichier fourni"}, status_code=400)
+
+    upload_dir = settings.STATIC_DIR / "uploads" / "products"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    results = []
+    for file in files:
+        if file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
+            continue
+
+        ext = file.filename.split('.')[-1].lower() if file.filename else "jpg"
+        if ext not in {"jpg", "jpeg", "png", "gif", "webp"}:
+            ext = "jpg"
+
+        filename = f"{uuid.uuid4()}.{ext}"
+        filepath = upload_dir / filename
+        content = await file.read()
+
+        with open(filepath, "wb") as f:
+            f.write(content)
+
+        url = f"/static/uploads/products/{filename}"
+        results.append({"url": url, "image_url": url})
+
+    if len(results) == 1:
+        return JSONResponse({"success": True, "url": results[0]["url"]})
+    return JSONResponse({"success": True, "urls": [r["url"] for r in results], "images": results})
 
     # OLD INLINE HTML BELOW (REMOVED)
     html = """
