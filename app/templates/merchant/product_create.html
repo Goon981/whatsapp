@@ -1,0 +1,239 @@
+{% extends "merchant/base.html" %}
+{% block title %}Ajouter un produit{% endblock %}
+{% block heading %}Ajouter un produit{% endblock %}
+{% block subheading %}Créez un nouveau produit avec photos{% endblock %}
+
+{% block content %}
+<style>
+  .create-form { background: #fff; border-radius: 12px; padding: 24px; border: 1px solid #eee; max-width: 800px; margin: 0 auto; }
+
+  .form-section { margin-bottom: 32px; }
+  .form-section h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #25d366; border-bottom: 2px solid #f0f8f5; padding-bottom: 8px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; }
+  .form-group textarea { resize: vertical; min-height: 100px; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #25d366; box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1); }
+
+  .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .two-cols { grid-template-columns: 1fr; } }
+
+  .upload-zone { border: 2px dashed #25d366; border-radius: 12px; padding: 40px 20px; text-align: center; background: #f0f8f5; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+  .upload-zone:hover { background: #e8f5e9; border-color: #128c4f; }
+  .upload-zone.dragover { background: #e8f5e9; border-color: #128c4f; transform: scale(1.02); }
+  .upload-zone-icon { font-size: 48px; margin-bottom: 12px; }
+  .upload-zone-title { font-weight: 600; color: #25d366; margin-bottom: 4px; font-size: 16px; }
+  .upload-zone-hint { font-size: 12px; color: #999; }
+  .upload-zone-help { font-size: 11px; color: #666; margin-top: 8px; }
+
+  .image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .image-thumb { position: relative; border-radius: 8px; overflow: hidden; border: 2px solid #ddd; aspect-ratio: 1; background: #f5f5f5; }
+  .image-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .image-thumb-remove { position: absolute; top: 4px; right: 4px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; }
+
+  .category-section { background: #f9f9f9; border-radius: 8px; padding: 16px; border: 1px solid #eee; margin-bottom: 16px; }
+  .category-row { display: flex; gap: 8px; align-items: flex-end; }
+  .category-row input { flex: 1; }
+  .category-row button { background: #25d366; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .category-row button:hover { background: #128c4f; }
+
+  .btn-submit { background: #25d366; color: white; border: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.2s; margin-top: 24px; }
+  .btn-submit:hover { background: #128c4f; }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .required::after { content: " *"; color: #dc3545; }
+</style>
+
+<div class="create-form">
+  <!-- Section 1: Images -->
+  <div class="form-section">
+    <h3>📸 Ajouter des photos</h3>
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-zone-icon">📸</div>
+      <div class="upload-zone-title">Sélectionnez vos photos</div>
+      <div class="upload-zone-hint">JPG, PNG, GIF · Max 5MB chacun</div>
+      <div class="upload-zone-help">Vous pouvez sélectionner 2, 3, 4 images ou plus à la fois</div>
+      <input type="file" id="fileInput" multiple="multiple" accept="image/*" style="display:none">
+    </div>
+    <div class="image-gallery" id="imageGallery"></div>
+  </div>
+
+  <!-- Section 2: Informations produit -->
+  <form id="productForm" class="form-section">
+    <h3>📝 Informations du produit</h3>
+
+    <div class="form-group">
+      <label for="name" class="required">Nom du produit</label>
+      <input id="name" name="name" required placeholder="Ex. Robe en wax">
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" placeholder="Décrivez votre produit..."></textarea>
+    </div>
+
+    <div class="two-cols">
+      <div class="form-group">
+        <label for="price" class="required">Prix (FCFA)</label>
+        <input id="price" name="price" type="number" min="0" required placeholder="15000">
+      </div>
+      <div class="form-group">
+        <label for="promo_price">Prix promo</label>
+        <input id="promo_price" name="promo_price" type="number" min="0" placeholder="12000">
+      </div>
+    </div>
+
+    <div class="two-cols">
+      <div class="form-group">
+        <label for="stock">Stock</label>
+        <input id="stock" name="stock" type="number" min="0" value="10" placeholder="10">
+      </div>
+      <div class="form-group">
+        <label for="low_stock_threshold">Seuil d'alerte</label>
+        <input id="low_stock_threshold" name="low_stock_threshold" type="number" min="0" value="5" placeholder="5">
+      </div>
+    </div>
+
+    <!-- Section 3: Catégorie -->
+    <div class="form-section">
+      <h3>📂 Catégorie</h3>
+
+      <div class="form-group">
+        <label for="category_id">Choisir une catégorie</label>
+        <select id="category_id" name="category_id">
+          <option value="">— Aucune —</option>
+          {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div class="category-section">
+        <label class="required">Créer une nouvelle catégorie</label>
+        <div class="category-row">
+          <input type="text" id="newCategoryName" placeholder="Nom de la catégorie (ex. Vêtements)">
+          <button type="button" id="addCategoryBtn" onclick="createCategory()">+ Ajouter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Variantes -->
+    <div class="form-section">
+      <h3>🎨 Variantes (optionnel)</h3>
+      <div class="form-group">
+        <label for="variants">Taille, couleur, etc.</label>
+        <textarea id="variants" name="variants" placeholder="Taille M|2500|10&#10;Taille L|3000|5&#10;Taille XL|3500|3"></textarea>
+        <small style="color: #666; margin-top: 4px; display: block;">Format: Nom|Prix|Stock (une par ligne)</small>
+      </div>
+    </div>
+
+    <input type="hidden" name="image_url" id="image_url">
+    <button type="submit" class="btn-submit" id="submitBtn">✓ Créer le produit</button>
+  </form>
+</div>
+
+<script>
+(function() {
+  const zone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const gallery = document.getElementById('imageGallery');
+  const form = document.getElementById('productForm');
+  let selectedFiles = [];
+
+  // Upload zone events
+  zone.addEventListener('click', () => fileInput.click());
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  function handleFiles(files) {
+    selectedFiles = [];
+    gallery.innerHTML = '';
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      selectedFiles.push(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'image-thumb';
+        thumb.innerHTML = `
+          <img src="${e.target.result}" alt="Image">
+          <button type="button" class="image-thumb-remove">✕</button>
+        `;
+        const removeBtn = thumb.querySelector('.image-thumb-remove');
+        removeBtn.onclick = (evt) => {
+          evt.preventDefault();
+          thumb.remove();
+          selectedFiles = selectedFiles.filter(f => f !== file);
+        };
+        gallery.appendChild(thumb);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Form submission
+  form.addEventListener('submit', (e) => {
+    if (selectedFiles.length > 0) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      selectedFiles.forEach(file => formData.append('files', file));
+
+      fetch('/app/products', {
+        method: 'POST',
+        body: formData
+      }).then(r => {
+        if (r.ok || r.status === 302) {
+          window.location.href = '/app/products';
+        } else {
+          alert('Erreur lors de la création du produit');
+        }
+      }).catch(err => alert('Erreur: ' + err.message));
+    }
+  });
+})();
+
+// Create category
+function createCategory() {
+  const nameInput = document.getElementById('newCategoryName');
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert('Entrez un nom de catégorie');
+    return;
+  }
+
+  const shopId = {{ shop.id }};
+  fetch(`/api/shops/${shopId}/catalog/categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.id) {
+      const select = document.getElementById('category_id');
+      const option = document.createElement('option');
+      option.value = data.id;
+      option.textContent = data.name;
+      select.appendChild(option);
+      select.value = data.id;
+      nameInput.value = '';
+      alert('✓ Catégorie créée: ' + data.name);
+    } else {
+      alert('Erreur: ' + (data.detail || 'Impossible de créer la catégorie'));
+    }
+  })
+  .catch(err => alert('Erreur: ' + err.message));
+}
+</script>
+{% endblock %}

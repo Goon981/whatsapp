@@ -487,6 +487,25 @@ async def product_new(request: Request, db: Session = Depends(get_db)):
     return html
 
 
+@router.get("/products/create", response_class=HTMLResponse)
+def product_create_page(request: Request, db: Session = Depends(get_db)):
+    """Page dédiée à la création d'un produit avec uploads multiples."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    _, shop = ctx
+    categories = (
+        db.query(models.Category)
+        .filter(models.Category.shop_id == shop.id)
+        .order_by(models.Category.position)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request, "merchant/product_create.html",
+        {"shop": shop, "categories": categories}
+    )
+
+
 @router.get("/products", response_class=HTMLResponse)
 def products_page(
     request: Request, db: Session = Depends(get_db),
