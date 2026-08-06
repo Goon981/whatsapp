@@ -4,7 +4,9 @@
 {% block content %}
   <div class="card" style="padding:0;overflow:hidden">
     <div class="thumb" style="aspect-ratio:16/12;background:#eef3f1;display:flex;align-items:center;justify-content:center;font-size:3.4rem;position:relative">
-      {% if product.image_url %}
+      {% if product.images and product.images|length > 0 %}
+        <img id="main-image" src="{{ product.images[0].image_url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover" onerror="handleImageError(this)">
+      {% elif product.image_url %}
         <img id="main-image" src="{{ product.image_url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover" onerror="handleImageError(this)">
       {% else %}
         🛒
