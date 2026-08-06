@@ -24,7 +24,7 @@
     {% for p in products %}
     <div class="product">
       <a class="thumb" href="/s/{{ shop.slug }}/p/{{ p.id }}">
-        {% if p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}">{% else %}🛒{% endif %}
+        {% if p.images %}<img src="{{ p.images[0].image_url }}" alt="{{ p.name }}">{% elif p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}">{% else %}🛒{% endif %}
       </a>
       <div class="body">
         <a class="name" href="/s/{{ shop.slug }}/p/{{ p.id }}" style="color:inherit">{{ p.name }}</a>
