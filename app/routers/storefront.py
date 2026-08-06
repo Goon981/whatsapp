@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import models
 from ..database import get_db
@@ -155,6 +155,7 @@ def product_page(slug: str, product_id: int, request: Request, db: Session = Dep
     shop = _get_public_shop(db, slug)
     product = (
         db.query(models.Product)
+        .options(selectinload(models.Product.images))
         .filter(
             models.Product.id == product_id,
             models.Product.shop_id == shop.id,
