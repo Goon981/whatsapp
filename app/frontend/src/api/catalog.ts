@@ -54,10 +54,13 @@ export const catalogAPI = {
       await apiClient.delete(`/shops/${shopId}/catalog/products/${productId}`);
     },
 
-    uploadImage: async (shopId: number, productId: number, file: File): Promise<{ image_url: string }> => {
+    uploadImage: async (shopId: number, productId: number, files: File | File[]): Promise<{ image_url: string } | { image_url: string }[]> => {
       const formData = new FormData();
-      formData.append('file', file);
-      const { data } = await apiClient.post(`/shops/${shopId}/catalog/products/${productId}/upload`, formData, {
+      const fileList = Array.isArray(files) ? files : [files];
+      fileList.forEach((file) => {
+        formData.append('files', file);
+      });
+      const { data } = await apiClient.post(`/shops/${shopId}/products/${productId}/images`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return data;
