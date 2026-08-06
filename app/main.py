@@ -8,17 +8,19 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import __version__
+from . import __version__, models
 from .config import settings
 from .database import get_db, init_db
 from .models import Shop, ShopStatus
+from .security import hash_password
 from .routers import (
     admin,
     auth,
@@ -120,8 +122,7 @@ def health():
 
 @app.post("/init-admin", include_in_schema=False)
 def init_admin(db: Session = Depends(get_db)):
-    """Initialize superadmin account. Auto-removed after first call."""
-    from .security import hash_password
+    """Initialize superadmin account."""
     admin = db.query(models.User).filter(models.User.email == "admin@shopcam.cm").first()
     if admin:
         return {"status": "exists", "email": admin.email}
