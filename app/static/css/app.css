@@ -209,20 +209,20 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .badge.pro { background: rgba(255,255,255,.22); color: #fff; }
 
 /* ---------- Grille catalogue ---------- */
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.product { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow); height: 100%; }
-.product .thumb { aspect-ratio: 1/1; background: #eef3f1; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; position: relative; flex-shrink: 0; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.product { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow); max-height: 280px; }
+.product .thumb { aspect-ratio: 1/1; background: #eef3f1; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; position: relative; flex-shrink: 0; max-width: 100%; }
 .product .thumb img { width: 100%; height: 100%; object-fit: cover; }
-.product .thumb .fav { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.85); display: flex; align-items: center; justify-content: center; }
-.product .body { padding: 9px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; }
-.product .name { font-weight: 600; font-size: .85rem; line-height: 1.2; -webkit-line-clamp: 2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; }
-.product .price { font-weight: 800; color: var(--text); font-size: .92rem; margin-top: auto; }
-.product .price small { font-size: .68rem; }
-.product .old { text-decoration: line-through; color: var(--muted); font-size: .68rem; font-weight: 500; margin-left: 4px; }
-.product .order-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--brand); color: #fff; border: none; border-radius: 11px; padding: 10px 12px; font-size: .85rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: auto; transition: filter .15s ease, transform .05s ease; font-family: inherit; white-space: nowrap; }
+.product .thumb .fav { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.85); display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+.product .body { padding: 6px 8px; display: flex; flex-direction: column; gap: 3px; flex: 1; min-height: 0; }
+.product .name { font-weight: 600; font-size: .75rem; line-height: 1.15; -webkit-line-clamp: 2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; word-break: break-word; }
+.product .price { font-weight: 700; color: var(--text); font-size: .8rem; margin-top: 2px; }
+.product .price small { font-size: .65rem; }
+.product .old { text-decoration: line-through; color: var(--muted); font-size: .6rem; font-weight: 500; margin-left: 3px; }
+.product .order-btn { display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--brand); color: #fff; border: none; border-radius: 9px; padding: 7px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; transition: filter .15s ease, transform .05s ease; font-family: inherit; white-space: nowrap; min-height: 32px; }
 .product .order-btn:hover { filter: brightness(1.06); }
 .product .order-btn:active { transform: scale(.98); }
-.product .order-btn .wa-ic { width: 16px; height: 16px; flex-shrink: 0; }
+.product .order-btn .wa-ic { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* ---------- Lignes de liste ---------- */
 .list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
