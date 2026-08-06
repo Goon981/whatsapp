@@ -60,7 +60,7 @@ h1, h2, h3 { margin: 0 0 .4em; }
 
 /* ---------- Barres d'en-tête ---------- */
 .topbar {
-  background: var(--grad); color: #fff; padding: 16px 0 18px;
+  background: var(--brand); color: #fff; padding: 16px 0 18px;
   position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow);
 }
 .topbar.plain { background: var(--surface); color: var(--text); box-shadow: 0 1px 0 var(--border); }
