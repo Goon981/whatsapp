@@ -1,4 +1,4 @@
-"""BAOBAY WhatsApp — plateforme de commerce mobile pour petits commerces.
+"""BAOBAY — plateforme de commerce mobile pour petits commerces.
 
 Application FastAPI multi-tenant : storefront public, espace commerçant et
 super-administration. Voir README.md pour le démarrage.

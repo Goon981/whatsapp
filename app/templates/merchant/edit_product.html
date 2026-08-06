@@ -351,8 +351,6 @@
     </div>
 </div>
 
-<input type="file" id="imageInput" multiple accept="image/*" style="display:none">
-
 <script>
     const dropzone = document.getElementById('dropzone');
     const imageInput = document.getElementById('imageInput');
@@ -505,8 +503,10 @@
     function createGallery() {
         const gallery = document.createElement('div');
         gallery.className = 'image-gallery';
-        document.getElementById('imageGallery').innerHTML = '';
-        document.getElementById('imageGallery').appendChild(gallery);
+        const container = document.getElementById('imageGallery');
+        const emptyState = container.querySelector('.empty-gallery');
+        if (emptyState) emptyState.remove();
+        container.appendChild(gallery);
         return gallery;
     }
 

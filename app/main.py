@@ -1,4 +1,4 @@
-"""Point d'entrée FastAPI de BAOBAY WhatsApp.
+"""Point d'entrée FastAPI de BAOBAY.
 
 Monte l'API REST documentée (OpenAPI — §13), les fichiers statiques et les trois
 applications HTML : storefront public, espace commerçant et super-administration.
@@ -52,7 +52,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=__version__,
     description=(
-        "API de la plateforme de commerce mobile BAOBAY WhatsApp. "
+        "API de la plateforme de commerce mobile BAOBAY. "
         "Montants en entiers FCFA, isolation multi-tenant par boutique."
     ),
     lifespan=lifespan,

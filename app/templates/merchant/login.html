@@ -7,15 +7,16 @@
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
-  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">🛍️</div><h1>BAOBAY WhatsApp</h1></div></header>
+  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">🛍️</div><h1>BAOBAY</h1></div></header>
   <main class="container page">
     <h1 class="page-title">{{ title or 'Connexion commerçant' }}</h1>
     {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
     <div class="card">
       {% if mode == 'register' %}
-      <form method="post" action="/app/register">
-        <label for="full_name">Nom complet</label>
-        <input id="full_name" name="full_name" required>
+      <form method="post" action="/app/register" id="registerForm">
+        <label for="full_name">Nom complet *</label>
+        <input id="full_name" name="full_name" required placeholder="Prénom Nom" onchange="validateFullName()">
+        <div id="fullNameError" style="color:#dc3545;font-size:12px;margin-top:4px;display:none;"></div>
         <label for="email">E-mail</label>
         <input id="email" name="email" type="email" placeholder="vous@exemple.com">
         <label for="phone">Téléphone</label>
@@ -25,6 +26,32 @@
         <div class="checkline mt"><input type="checkbox" id="accept" name="accept_terms" required checked><label for="accept" style="margin:0" class="hint">J'accepte les conditions d'utilisation et la politique de confidentialité</label></div>
         <button class="btn block mt" type="submit">Créer mon compte</button>
       </form>
+      <script>
+        function validateFullName() {
+          const fullName = document.getElementById('full_name').value.trim();
+          const errorDiv = document.getElementById('fullNameError');
+          const words = fullName.split(/\s+/).filter(w => w.length > 0);
+
+          if (words.length < 2) {
+            errorDiv.textContent = '⚠️ Veuillez entrer votre prénom et nom';
+            errorDiv.style.display = 'block';
+            return false;
+          } else {
+            errorDiv.style.display = 'none';
+            return true;
+          }
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+          if (!validateFullName()) {
+            e.preventDefault();
+            alert('⚠️ Veuillez entrer votre nom complet (prénom + nom)');
+          }
+        });
+
+        // Validation on input
+        document.getElementById('full_name').addEventListener('blur', validateFullName);
+      </script>
       <p class="center mt muted">Déjà inscrit ? <a href="/app/login">Se connecter</a></p>
       {% else %}
       <form method="post" action="/app/login">
