@@ -247,6 +247,7 @@ def onboarding_submit(
         status=models.ShopStatus.ACTIVE,
         theme_color=theme_color, secondary_color=secondary_color, text_color=text_color,
         logo_url=logo_url,
+        trial_expires_at=utcnow() + timedelta(days=14),
     )
     db.add(shop)
     db.flush()
