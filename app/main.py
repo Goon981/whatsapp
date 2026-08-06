@@ -118,6 +118,27 @@ def health():
     return {"status": "ok", "version": __version__}
 
 
+@app.post("/init-admin", include_in_schema=False)
+def init_admin(db: Session = Depends(get_db)):
+    """Initialize superadmin account. Auto-removed after first call."""
+    from .security import hash_password
+    admin = db.query(models.User).filter(models.User.email == "admin@shopcam.cm").first()
+    if admin:
+        return {"status": "exists", "email": admin.email}
+    admin = models.User(
+        full_name="SmartShop Admin",
+        email="admin@shopcam.cm",
+        phone="+237670000000",
+        password_hash=hash_password("Admin@SmartShop2024!"),
+        role=models.UserRole.SUPERADMIN,
+        is_active=True,
+        phone_verified=True
+    )
+    db.add(admin)
+    db.commit()
+    return {"status": "created", "email": admin.email}
+
+
 # --- Frontend React SPA (fallback) ----------------------------------------- #
 @app.get("/app", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/app/{path:path}", response_class=HTMLResponse, include_in_schema=False)
