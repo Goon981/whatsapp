@@ -50,11 +50,12 @@ def create_category(
 
 @router.post("/catalog/categories", response_model=schemas.CategoryOut, status_code=201)
 def create_category_alt(
+    shop_id: int,
     data: schemas.CategoryIn,
-    access=Depends(require_permission("catalog")),
+    access=Depends(require_shop_access),
     db: Session = Depends(get_db),
 ):
-    """Alias endpoint pour compatibilité avec le frontend (même endpoint, chemin alternatif)."""
+    """Alias endpoint pour compatibilité avec le frontend (chemin alternatif avec accès simple)."""
     shop, _ = access
     cat = models.Category(shop_id=shop.id, name=data.name, position=data.position)
     db.add(cat)
