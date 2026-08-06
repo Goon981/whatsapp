@@ -4,6 +4,7 @@ Rendu serveur mobile-first. Une boutique suspendue est inaccessible (RM-01).
 """
 from __future__ import annotations
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
@@ -12,6 +13,9 @@ from .. import models
 from ..database import get_db
 from ..templating import templates
 from ..services.whatsapp import build_wa_link
+
+logger = logging.getLogger("smartshop")
+logger.warning("⚠️ STOREFRONT ROUTER LOADED - Module is alive and running!")
 
 router = APIRouter(tags=["storefront"], include_in_schema=False, prefix="")
 
