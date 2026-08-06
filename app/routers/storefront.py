@@ -47,6 +47,16 @@ def test_route(request: Request):
     """Route de test pour vérifier que le module est chargé."""
     return HTMLResponse("<h1>✅ STOREFRONT ROUTER FONCTIONNE!</h1>")
 
+@router.get("/test-shops", response_class=HTMLResponse)
+def test_shops(db: Session = Depends(get_db)):
+    """Route de test pour vérifier les boutiques en BD."""
+    shops = db.query(models.Shop).all()
+    html = f"<h1>Boutiques trouvées: {len(shops)}</h1><ul>"
+    for shop in shops:
+        html += f"<li>{shop.slug} - {shop.name} - {shop.status.value}</li>"
+    html += "</ul>"
+    return HTMLResponse(html)
+
 @router.get("/s/{slug}", response_class=HTMLResponse)
 def shop_home(
     slug: str,
