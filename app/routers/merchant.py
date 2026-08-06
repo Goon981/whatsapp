@@ -538,7 +538,7 @@ def _parse_variants(raw: str, shop_id: int, base_price: int) -> list[models.Prod
 
 
 @router.post("/products", response_class=HTMLResponse)
-def create_product(
+async def create_product(
     request: Request,
     name: str = Form(...),
     price: int = Form(...),
@@ -549,6 +549,7 @@ def create_product(
     image_url: str = Form(""),
     description: str = Form(""),
     variants: str = Form(""),
+    files: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
 ):
     ctx, redirect = _require_shop(request, db)
@@ -568,6 +569,38 @@ def create_product(
         v.product_id = product.id
         db.add(v)
     db.commit()
+
+    # Upload product images if provided
+    if files:
+        upload_dir = settings.STATIC_DIR / "uploads" / "products"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        for i, file in enumerate(files):
+            if not file.content_type or file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
+                continue
+
+            ext = file.filename.split('.')[-1].lower() if file.filename else "jpg"
+            if ext not in {"jpg", "jpeg", "png", "gif", "webp"}:
+                ext = "jpg"
+
+            filename = f"{uuid.uuid4()}.{ext}"
+            filepath = upload_dir / filename
+            content = await file.read()
+
+            with open(filepath, "wb") as f:
+                f.write(content)
+
+            img = models.ProductImage(
+                shop_id=shop.id,
+                product_id=product.id,
+                image_url=f"/static/uploads/products/{filename}",
+                position=i,
+                is_primary=(i == 0)
+            )
+            db.add(img)
+
+        db.commit()
+
     return _redirect("/app/products")
 
 

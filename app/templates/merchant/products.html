@@ -33,8 +33,15 @@
         <option value="">— Aucune —</option>
         {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
       </select>
-      <label for="image_url">Image (URL)</label>
-      <input id="image_url" name="image_url" placeholder="https://…">
+      <label>Image(s) du produit</label>
+      <div id="uploadZone" style="border:2px dashed #25d366;border-radius:8px;padding:30px;text-align:center;background:#f0f8f5;cursor:pointer;margin-bottom:16px;transition:all 0.2s">
+        <div style="font-size:32px;margin-bottom:8px">📸</div>
+        <div style="font-weight:600;color:#25d366;margin-bottom:4px">Déposez vos images ou cliquez</div>
+        <div style="font-size:12px;color:#999">JPG, PNG · Max 5MB chacun</div>
+        <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
+      </div>
+      <div id="imagePreview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:16px"></div>
+      <input id="image_url" name="image_url" placeholder="https://… (ou uploadez une image ci-dessus)" style="display:none">
       <label for="description">Description</label>
       <textarea id="description" name="description"></textarea>
       <label for="variants">Variantes (optionnel — une par ligne : Nom|prix|stock)</label>
@@ -65,4 +72,123 @@
     {% endfor %}
   </div>
   {% endif %}
+
+<style>
+  #uploadZone.dragover {
+    background: #e8f5e9;
+    border-color: #128c4f;
+    transform: scale(1.02);
+  }
+
+  .image-thumb {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #ddd;
+    aspect-ratio: 1;
+  }
+
+  .image-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-thumb-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+
+<script>
+(function() {
+  const zone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const preview = document.getElementById('imagePreview');
+  let selectedFiles = [];
+
+  zone.addEventListener('click', () => fileInput.click());
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  function handleFiles(files) {
+    selectedFiles = [];
+    preview.innerHTML = '';
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      selectedFiles.push(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'image-thumb';
+        thumb.innerHTML = `
+          <img src="${e.target.result}" alt="Image">
+          <button type="button" class="image-thumb-remove">✕</button>
+        `;
+        const removeBtn = thumb.querySelector('.image-thumb-remove');
+        removeBtn.onclick = (evt) => {
+          evt.preventDefault();
+          thumb.remove();
+          selectedFiles = selectedFiles.filter(f => f !== file);
+        };
+        preview.appendChild(thumb);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Handle form submission with files
+  const form = document.querySelector('form[action="/app/products"]');
+  form.addEventListener('submit', (e) => {
+    if (selectedFiles.length > 0) {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      // Add files to FormData
+      selectedFiles.forEach(file => {
+        formData.append('files', file);
+      });
+
+      // Submit via fetch
+      fetch('/app/products', {
+        method: 'POST',
+        body: formData
+      }).then(r => {
+        if (r.ok || r.status === 302) {
+          window.location.href = '/app/products';
+        } else {
+          alert('Erreur lors de la création du produit');
+        }
+      }).catch(err => {
+        alert('Erreur: ' + err.message);
+      });
+    }
+  });
+})();
+</script>
 {% endblock %}
