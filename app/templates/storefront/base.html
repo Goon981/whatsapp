@@ -6,7 +6,11 @@
   <title>{% block title %}{{ shop.name }}{% endblock %} · SmartShop</title>
   <meta name="description" content="{{ shop.description or shop.name }}">
   <link rel="stylesheet" href="/static/css/app.css">
-  {% if shop %}<style>:root{ --brand: {{ shop.theme_color }}; }</style>{% endif %}
+  {% if shop %}<style>:root{
+    --brand: {{ shop.theme_color }};
+    --brand-light: {{ shop.secondary_color }};
+    --text: {{ shop.text_color }};
+  }</style>{% endif %}
 </head>
 <body>
   <header class="topbar">
