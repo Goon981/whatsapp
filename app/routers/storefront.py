@@ -26,14 +26,38 @@ def init_test_shop(db: Session = Depends(get_db)):
     existing = db.query(models.Shop).filter(models.Shop.slug == "test").first()
     if existing:
         return HTMLResponse(f"<h1>✅ Existe: {existing.name}</h1><a href='/s/test'>Visiter</a>")
-    user = models.User(full_name="Test", email="test@test.com", phone="+237600000000", password_hash="x", role=models.UserRole.OWNER, is_active=True)
+
+    user = models.User(
+        full_name="Test",
+        email="test@test.com",
+        phone="+237600000000",
+        password_hash="demo_hash",
+        role=models.UserRole.OWNER,
+        is_active=True
+    )
     db.add(user)
     db.flush()
-    shop = models.Shop(owner_id=user.id, name="Test Shop", slug="test", status=models.ShopStatus.ACTIVE, accept_cash_on_delivery=True, accept_mtn_momo=True, accept_orange_money=True, accept_airtel_money=True, accept_card=True)
+
+    shop = models.Shop(
+        owner_id=user.id,
+        name="Test Shop",
+        slug="test",
+        status=models.ShopStatus.ACTIVE,
+        accept_cash_on_delivery=True,
+        accept_mtn_momo=True,
+        accept_orange_money=True,
+        accept_airtel_money=True,
+        accept_card=True
+    )
     db.add(shop)
-    products = [models.Product(shop_id=shop.id, name="T-Shirt", price=5000, stock=10), models.Product(shop_id=shop.id, name="Pantalon", price=15000, stock=5), models.Product(shop_id=shop.id, name="Chapeau", price=3000, stock=20)]
-    db.add_all(products)
+    db.flush()
+
+    p1 = models.Product(shop_id=shop.id, name="T-Shirt", price=5000, stock=10)
+    p2 = models.Product(shop_id=shop.id, name="Pantalon", price=15000, stock=5)
+    p3 = models.Product(shop_id=shop.id, name="Chapeau", price=3000, stock=20)
+    db.add_all([p1, p2, p3])
     db.commit()
+
     return HTMLResponse(f"<h1>✅ Créé!</h1><a href='/s/test'>Visiter</a>")
 
 _STATUS_LABELS = {
