@@ -3,6 +3,9 @@
 Plateforme SaaS de commerce mobile pour petits commerces (restaurants, mode,
 cosmétique, commerce général) présents sur WhatsApp. Chaque commerçant crée sa
 boutique, reçoit des commandes, encaisse par Mobile Money et gère ses ventes
+
+## Force Redeploy
+Triggering Railway rebuild...
 depuis un téléphone — sans compétence technique.
 
 Ce dépôt est une implémentation **MVP** du cahier des charges *SmartShop WhatsApp*
