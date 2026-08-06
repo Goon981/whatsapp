@@ -40,7 +40,7 @@
             Commander
           </a>
         {% else %}
-          <button class="order-btn" onclick="quickAdd({{ p.id }}, {{ p.name|tojson }}, {{ p.effective_price }}, {{ (p.image_url or '')|tojson }})">
+          <button class="order-btn" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ p.effective_price }}" data-image="{{ p.image_url or '' }}" onclick="quickAdd(parseInt(this.dataset.id), this.dataset.name, parseInt(this.dataset.price), this.dataset.image)">
             <svg class="wa-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.4 5 5.1-1.3A10 10 0 1 0 12 2Z" opacity=".2"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M8 10c1 4 3 5 6 6l1.5-1.5 2 .8c-.3 2-2.3 2.4-4 2-4-1-6.5-3.5-7.5-7.5-.4-1.7 0-3.7 2-4l.8 2Z"/></svg>
             Commander
           </button>
