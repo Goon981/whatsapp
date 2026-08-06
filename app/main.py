@@ -1,4 +1,4 @@
-"""Point d'entrée FastAPI de SmartShop WhatsApp.
+"""Point d'entrée FastAPI de BAOBAY WhatsApp.
 
 Monte l'API REST documentée (OpenAPI — §13), les fichiers statiques et les trois
 applications HTML : storefront public, espace commerçant et super-administration.
@@ -44,7 +44,7 @@ logger = logging.getLogger("smartshop")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    logger.info("SmartShop démarré (env=%s).", settings.ENV)
+    logger.info("BAOBAY démarré (env=%s).", settings.ENV)
     yield
 
 
@@ -52,7 +52,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=__version__,
     description=(
-        "API de la plateforme de commerce mobile SmartShop WhatsApp. "
+        "API de la plateforme de commerce mobile BAOBAY WhatsApp. "
         "Montants en entiers FCFA, isolation multi-tenant par boutique."
     ),
     lifespan=lifespan,

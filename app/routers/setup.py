@@ -26,10 +26,10 @@ async def create_superadmin(db: Session = Depends(get_db)):
 
     # Créer le superadmin
     admin = User(
-        full_name="SmartShop Admin",
+        full_name="BAOBAY Admin",
         email="admin@shopcam.cm",
         phone="+237670000000",
-        password_hash=hash_password("Admin@SmartShop2024!"),
+        password_hash=hash_password("Admin@BAOBAY2024!"),
         role=UserRole.SUPERADMIN,
         is_active=True,
         phone_verified=True
@@ -44,7 +44,7 @@ async def create_superadmin(db: Session = Depends(get_db)):
         "message": "✅ Superadmin créé avec succès",
         "credentials": {
             "email": "admin@shopcam.cm",
-            "password": "Admin@SmartShop2024!",
+            "password": "Admin@BAOBAY2024!",
             "role": admin.role,
             "access_url": "https://shopcam237.com/admin"
         }

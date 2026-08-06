@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{% block title %}Espace commerçant{% endblock %} · SmartShop</title>
+  <title>{% block title %}Espace commerçant{% endblock %} · BAOBAY</title>
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
     <div class="container">
       <div class="logo-badge">🧑‍💼</div>
       <div class="grow">
-        <h1>{% block heading %}{{ shop.name if shop else 'SmartShop' }}{% endblock %}</h1>
+        <h1>{% block heading %}{{ shop.name if shop else 'BAOBAY' }}{% endblock %}</h1>
         <div class="sub">{% block subheading %}Espace commerçant{% endblock %}</div>
       </div>
       {% if shop %}<a class="icon-btn" href="/s/{{ shop.slug }}" target="_blank" title="Voir la boutique">

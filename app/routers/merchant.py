@@ -933,7 +933,7 @@ async def upload_product_image(files: list[UploadFile] = File(...)):
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Abonnement & Paiement - SmartShop</title>
+        <title>Abonnement & Paiement - BAOBAY</title>
         <link rel="stylesheet" href="/static/css/app.css">
         <style>
             .trial-banner { background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center; }

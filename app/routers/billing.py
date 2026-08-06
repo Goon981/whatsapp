@@ -152,7 +152,7 @@ async def check_expiry_and_notify(db: Session = Depends(get_db)):
 
             # Notification 3 jours avant expiration du trial
             if days_left == 3:
-                wa_url = f"https://wa.me/{shop.phone_number}?text=Votre%20trial%20SmartShop%20expire%20dans%203%20jours.%20Passez%20à%20un%20abonnement%20payant%20pour%20continuer.%20https://shopcam237.com/app/payment"
+                wa_url = f"https://wa.me/{shop.phone_number}?text=Votre%20trial%20BAOBAY%20expire%20dans%203%20jours.%20Passez%20à%20un%20abonnement%20payant%20pour%20continuer.%20https://shopcam237.com/app/payment"
                 # En prod: appel HTTP à Twilio/gupshup pour envoyer le SMS/WhatsApp
                 notifications_sent += 1
 
@@ -169,7 +169,7 @@ async def check_expiry_and_notify(db: Session = Depends(get_db)):
 
             # Notification 3 jours avant expiration de l'abonnement
             if days_left == 3:
-                wa_url = f"https://wa.me/{shop.whatsapp_number}?text=Votre%20abonnement%20SmartShop%20expire%20dans%203%20jours.%20Renouvelez%20pour%20rester%20actif.%20https://shopcam237.com/app/payment"
+                wa_url = f"https://wa.me/{shop.whatsapp_number}?text=Votre%20abonnement%20BAOBAY%20expire%20dans%203%20jours.%20Renouvelez%20pour%20rester%20actif.%20https://shopcam237.com/app/payment"
                 notifications_sent += 1
 
             # Suspendre si subscription expirée

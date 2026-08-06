@@ -23,7 +23,7 @@ def _get_bool(name: str, default: bool) -> bool:
 class Settings:
     """Paramètres applicatifs lus depuis l'environnement."""
 
-    APP_NAME: str = "SmartShop WhatsApp"
+    APP_NAME: str = "BAOBAY WhatsApp"
     ENV: str = os.getenv("SMARTSHOP_ENV", "development")
     DEBUG: bool = _get_bool("SMARTSHOP_DEBUG", True)
 

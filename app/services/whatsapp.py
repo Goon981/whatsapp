@@ -3,7 +3,7 @@
 MVP : on construit un lien ``https://wa.me/<numero>?text=<message>`` que le client
 ouvre pour transmettre le récapitulatif au commerçant. L'API WhatsApp Business
 (notifications automatiques) est prévue pour une phase ultérieure. Dans tous les cas,
-la commande reste enregistrée dans SmartShop même si l'envoi échoue (RM-10).
+la commande reste enregistrée dans BAOBAY même si l'envoi échoue (RM-10).
 """
 from __future__ import annotations
 
