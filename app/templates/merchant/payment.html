@@ -260,7 +260,7 @@
     <script>
         let selectedPlan = null;
         let selectedPaymentMethod = null;
-        const SHOP_ID = {{ shop.id }};
+        const SHOP_ID = {{ shop.id if shop else 'null' }};
 
         function selectPlan(planName, element) {
             document.querySelectorAll('.plan-card').forEach(card => {
@@ -308,7 +308,7 @@
             .then(data => {
                 if (data.success) {
                     alert('Paiement initié! Veuillez compléter votre paiement sur votre téléphone.');
-                    window.location.href = '/app';
+                    window.location.href = '/app/dashboard';
                 } else {
                     alert('Erreur: ' + (data.error || 'Impossible d\'initier le paiement'));
                     btn.disabled = false;
@@ -323,7 +323,7 @@
         }
 
         function skipPayment() {
-            window.location.href = '/app';
+            window.location.href = '/app/onboarding';
         }
     </script>
 </body>
