@@ -57,6 +57,42 @@ def test_shops(db: Session = Depends(get_db)):
     html += "</ul>"
     return HTMLResponse(html)
 
+@router.get("/init-test-shop", response_class=HTMLResponse)
+def init_test_shop(db: Session = Depends(get_db)):
+    """Crée une boutique de test si elle n'existe pas."""
+    existing = db.query(models.Shop).filter(models.Shop.slug == "test").first()
+    if existing:
+        return HTMLResponse(f"<h1>Boutique test existe déjà: {existing.name}</h1>")
+
+    # Créer un utilisateur test
+    user = models.User(
+        full_name="Test User",
+        email="test@example.com",
+        phone="+237600000000",
+        password_hash="test",
+        role=models.UserRole.OWNER,
+        is_active=True
+    )
+    db.add(user)
+    db.flush()
+
+    # Créer une boutique test
+    shop = models.Shop(
+        owner_id=user.id,
+        name="Test Shop",
+        slug="test",
+        status=models.ShopStatus.ACTIVE,
+        accept_cash_on_delivery=True,
+        accept_mtn_momo=True,
+        accept_orange_money=True,
+        accept_airtel_money=True,
+        accept_card=True
+    )
+    db.add(shop)
+    db.commit()
+
+    return HTMLResponse(f"<h1>✅ Boutique test créée: {shop.name}</h1><p>URL: /s/{shop.slug}</p>")
+
 @router.get("/s/{slug}", response_class=HTMLResponse)
 def shop_home(
     slug: str,
