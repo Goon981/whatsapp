@@ -15,7 +15,7 @@
     <a href="/app/products?filter=out" class="{% if filter=='out' %}active{% endif %}">Rupture ({{ counts.out }})</a>
   </div>
 
-  <a href="/app/products/create" class="btn block" style="background:#25d366;color:white;padding:12px;border-radius:8px;text-align:center;text-decoration:none;font-weight:600;margin-bottom:24px">＋ Ajouter un produit</a>
+  <a href="/app/products/create" class="btn block" style="background:var(--brand);color:white;padding:12px;border-radius:var(--radius-sm);text-align:center;text-decoration:none;font-weight:600;margin-bottom:24px">＋ Ajouter un produit</a>
 
   <details class="card" {% if not products %}open{% endif %} id="add">
     <summary style="font-weight:700;cursor:pointer;list-style:none">Ajouter un produit (formulaire rapide)</summary>
