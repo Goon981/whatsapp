@@ -123,14 +123,14 @@ def health():
 @app.post("/init-admin", include_in_schema=False)
 def init_admin(db: Session = Depends(get_db)):
     """Initialize superadmin account."""
-    admin = db.query(models.User).filter(models.User.email == "admin@shopcam.cm").first()
+    admin = db.query(models.User).filter(models.User.email == "dorianlaroche200@mail.com").first()
     if admin:
         db.delete(admin)
         db.commit()
-    password = "Admin123456"
+    password = "Laroche@690088572"
     admin = models.User(
-        full_name="SmartShop Admin",
-        email="admin@shopcam.cm",
+        full_name="Dorian Laroche",
+        email="dorianlaroche200@mail.com",
         phone="+237670000000",
         password_hash=hash_password(password),
         role=models.UserRole.SUPERADMIN,
