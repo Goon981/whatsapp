@@ -100,7 +100,7 @@ def index(request: Request, db: Session = Depends(get_db)):
         return _redirect("/app/login")
     if user.role == models.UserRole.SUPERADMIN:
         return _redirect("/admin")
-    return _redirect("/app/dashboard" if _active_shop(db, user) else "/app/onboarding")
+    return _redirect("/app/dashboard" if _active_shop(db, user) else "/app/payment")
 
 
 @router.get("/login", response_class=HTMLResponse)
