@@ -28,7 +28,6 @@ from .routers import (
     merchant,
     orders,
     payments,
-    setup,
     shops,
     stats,
     storefront,
@@ -91,7 +90,6 @@ app.include_router(stats.router)
 app.include_router(admin.router)
 app.include_router(uploads.router)
 app.include_router(invitations.router)
-app.include_router(setup.router)
 
 # --- Applications HTML ----------------------------------------------------- #
 app.include_router(storefront.router)
