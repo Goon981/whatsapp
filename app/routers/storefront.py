@@ -42,6 +42,11 @@ def _get_public_shop(db: Session, slug: str) -> models.Shop:
     return shop
 
 
+@router.get("/test-storefront", response_class=HTMLResponse)
+def test_route(request: Request):
+    """Route de test pour vérifier que le module est chargé."""
+    return HTMLResponse("<h1>✅ STOREFRONT ROUTER FONCTIONNE!</h1>")
+
 @router.get("/s/{slug}", response_class=HTMLResponse)
 def shop_home(
     slug: str,
