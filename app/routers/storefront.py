@@ -33,7 +33,7 @@ _STATUS_CLASS = {
 
 def _get_public_shop(db: Session, slug: str) -> models.Shop:
     shop = db.query(models.Shop).filter(models.Shop.slug == slug).first()
-    if shop is None or shop.is_deleted or shop.status != models.ShopStatus.ACTIVE:
+    if shop is None or shop.is_deleted:
         raise HTTPException(404, "Boutique introuvable ou indisponible.")
     return shop
 
