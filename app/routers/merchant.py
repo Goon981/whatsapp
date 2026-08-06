@@ -175,17 +175,6 @@ def register_submit(
     db.commit()
     db.refresh(user)
 
-    # Créer une boutique automatiquement avec trial de 14 jours
-    shop_name = full_name.split()[0] if full_name else "Ma Boutique"
-    shop = models.Shop(
-        owner_id=user.id,
-        name=shop_name,
-        slug=unique_shop_slug(db, shop_name),
-        trial_expires_at=utcnow() + timedelta(days=14),
-    )
-    db.add(shop)
-    db.commit()
-
     resp = _redirect("/app/payment")
     _set_session(resp, user)
     return resp
