@@ -98,6 +98,8 @@ def index(request: Request, db: Session = Depends(get_db)):
     user = _current_user(request, db)
     if user is None:
         return _redirect("/app/login")
+    if user.role == models.UserRole.SUPERADMIN:
+        return _redirect("/admin")
     return _redirect("/app/dashboard" if _active_shop(db, user) else "/app/onboarding")
 
 
