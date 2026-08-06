@@ -679,6 +679,110 @@ def update_product(
 
 
 # --------------------------------------------------------------------------- #
+# Catégories
+# --------------------------------------------------------------------------- #
+@router.get("/categories", response_class=HTMLResponse)
+def categories_page(request: Request, db: Session = Depends(get_db)):
+    """Affiche la liste des catégories."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    user, shop = ctx
+    categories = (
+        db.query(models.Category)
+        .filter(models.Category.shop_id == shop.id)
+        .order_by(models.Category.position)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request, "merchant/categories.html",
+        {"shop": shop, "user": user, "categories": categories, "active_tab": "categories"},
+    )
+
+
+@router.post("/categories", response_class=HTMLResponse)
+def create_category(
+    name: str = Form(...),
+    request: Request = None,
+    db: Session = Depends(get_db),
+):
+    """Crée une nouvelle catégorie."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    user, shop = ctx
+
+    name = name.strip()
+    if not name:
+        return _redirect("/app/categories")
+
+    # Vérifier si la catégorie existe déjà
+    existing = (
+        db.query(models.Category)
+        .filter(models.Category.shop_id == shop.id, models.Category.name == name)
+        .first()
+    )
+    if existing:
+        return _redirect("/app/categories")
+
+    # Trouver la position maximale
+    max_position = (
+        db.query(models.Category)
+        .filter(models.Category.shop_id == shop.id)
+        .with_entities(models.Category.position.isouter())
+        .order_by(models.Category.position.desc())
+        .first()
+    )
+    position = (max_position[0] or 0) + 1 if max_position and max_position[0] else 1
+
+    category = models.Category(
+        shop_id=shop.id,
+        name=name,
+        position=position,
+        is_active=True,
+    )
+    db.add(category)
+    db.commit()
+    return _redirect("/app/categories")
+
+
+@router.post("/categories/{category_id}/delete", response_class=HTMLResponse)
+def delete_category(
+    category_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Supprime une catégorie."""
+    ctx, redirect = _require_shop(request, db)
+    if redirect:
+        return redirect
+    user, shop = ctx
+
+    category = (
+        db.query(models.Category)
+        .filter(models.Category.id == category_id, models.Category.shop_id == shop.id)
+        .first()
+    )
+    if not category:
+        return _redirect("/app/categories")
+
+    # Vérifier si des produits utilisent cette catégorie
+    product_count = (
+        db.query(models.Product)
+        .filter(models.Product.category_id == category_id)
+        .count()
+    )
+
+    if product_count > 0:
+        # Ne pas supprimer si des produits l'utilisent
+        return _redirect("/app/categories")
+
+    db.delete(category)
+    db.commit()
+    return _redirect("/app/categories")
+
+
+# --------------------------------------------------------------------------- #
 # Commandes
 # --------------------------------------------------------------------------- #
 @router.get("/orders", response_class=HTMLResponse)
