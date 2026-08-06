@@ -213,8 +213,9 @@ function createCategory() {
   }
 
   const shopId = {{ shop.id }};
-  fetch(`/api/shops/${shopId}/categories`, {
+  fetch(`/api/shops/${shopId}/catalog/categories`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name })
   })
