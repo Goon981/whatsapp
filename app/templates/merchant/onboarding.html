@@ -77,6 +77,7 @@
     <hr style="margin: 24px 0; border: none; border-top: 1px solid #ddd;">
     <h3 style="margin-bottom: 12px;">Personnalisation du thème</h3>
     <p class="hint">Choisissez les couleurs de votre boutique pour la rendre unique</p>
+    <button type="button" style="background: #25d366; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-bottom: 16px; font-weight: 600;" onclick="autoPersonalizeColors()">✨ Personnaliser automatiquement</button>
 
     <label for="theme_color">Couleur principale</label>
     <div style="display: flex; gap: 12px; align-items: center;">
@@ -115,6 +116,55 @@
         document.getElementById('theme_color_text').textContent = themeInput.value.toUpperCase();
         document.getElementById('secondary_color_text').textContent = secondaryInput.value.toUpperCase();
         document.getElementById('text_color_text').textContent = textInput.value.toUpperCase();
+      }
+
+      function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      }
+
+      function rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+      }
+
+      function getLuminance(hex) {
+        const rgb = hexToRgb(hex);
+        if (!rgb) return 0.5;
+        return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+      }
+
+      function getLightenedColor(hex, percent) {
+        const rgb = hexToRgb(hex);
+        if (!rgb) return hex;
+        const factor = 1 + (percent / 100);
+        return rgbToHex(
+          Math.min(255, Math.round(rgb.r * factor)),
+          Math.min(255, Math.round(rgb.g * factor)),
+          Math.min(255, Math.round(rgb.b * factor))
+        );
+      }
+
+      function autoPersonalizeColors() {
+        const mainColor = themeInput.value;
+
+        // Génère une couleur secondaire claire (version allégée)
+        const secondaryColor = getLightenedColor(mainColor, 85);
+
+        // Détermine la couleur du texte (noir ou blanc) basée sur la luminance
+        const luminance = getLuminance(mainColor);
+        const textColor = luminance > 0.5 ? "#000000" : "#FFFFFF";
+
+        // Met à jour les champs
+        themeInput.value = mainColor;
+        secondaryInput.value = secondaryColor;
+        textInput.value = textColor;
+
+        // Rafraîchit l'aperçu
+        updateColors();
       }
 
       themeInput.addEventListener('input', updateColors);
