@@ -291,11 +291,15 @@
             btn.disabled = true;
             btn.textContent = 'Initiation du paiement...';
 
-            const phone = prompt('Entrez votre numéro de téléphone (+237...)');
+            // Utiliser le numéro de téléphone depuis le formulaire d'onboarding
+            const phone = document.querySelector('[placeholder="+237"]')?.value ||
+                         document.querySelector('input[name="phone"]')?.value ||
+                         '+237690088572';
 
-            if (!phone) {
+            if (!phone || phone.length < 10) {
                 btn.disabled = false;
                 btn.textContent = '🔒 Confirmer et payer';
+                alert('Numéro de téléphone invalide');
                 return;
             }
 
