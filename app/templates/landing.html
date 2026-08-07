@@ -8,10 +8,10 @@
   {{ theme_style(shop if shop is defined else None)|safe }}
 </head>
 <body>
-  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">{{ icon('bag', 18) }}</div><h1>BAOBAY</h1></div></header>
+  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">{{ icon('bag', 24) }}</div><h1>BAOBAY</h1></div></header>
   <main class="container page">
     <div class="card center">
-      <div style="font-size:3rem">{{ icon('bag', 18) }}{{ icon('message', 18) }}</div>
+      <div class="hero-mark">{{ icon('bag', 34) }}</div>
       <h1>Vendez simplement avec BAOBAY.</h1>
       <p class="muted">Créez votre boutique, recevez des commandes, encaissez par Mobile Money et gérez vos ventes depuis un téléphone — sans compétence technique.</p>
       <a class="btn block mt" href="/app/register">Créer ma boutique</a>
@@ -20,10 +20,10 @@
 
     <div class="card">
       <h3>Comment ça marche</h3>
-      <div class="row-item"><div class="grow"><strong>1. Créez votre boutique</strong><br><span class="muted">Nom, secteur, c'est parti.</span></div>{{ icon('store', 18) }}</div>
-      <div class="row-item"><div class="grow"><strong>2. Ajoutez vos produits</strong><br><span class="muted">Photos, prix, variantes et stock.</span></div>{{ icon('package', 18) }}</div>
-      <div class="row-item"><div class="grow"><strong>3. Partagez votre lien</strong><br><span class="muted">Vos clients commandent et paient.</span></div>{{ icon('link', 18) }}</div>
-      <div class="row-item"><div class="grow"><strong>4. Gérez tout</strong><br><span class="muted">Commandes, stock et statistiques.</span></div>{{ icon('chart', 18) }}</div>
+      <div class="row-item"><div class="grow"><strong>1. Créez votre boutique</strong><br><span class="muted">Nom, secteur, c'est parti.</span></div><span class="step-ic">{{ icon('store', 20) }}</span></div>
+      <div class="row-item"><div class="grow"><strong>2. Ajoutez vos produits</strong><br><span class="muted">Photos, prix, variantes et stock.</span></div><span class="step-ic">{{ icon('package', 20) }}</span></div>
+      <div class="row-item"><div class="grow"><strong>3. Partagez votre lien</strong><br><span class="muted">Vos clients commandent et paient.</span></div><span class="step-ic">{{ icon('link', 20) }}</span></div>
+      <div class="row-item"><div class="grow"><strong>4. Gérez tout</strong><br><span class="muted">Commandes, stock et statistiques.</span></div><span class="step-ic">{{ icon('chart', 20) }}</span></div>
     </div>
 
     {% if demo_shop %}

@@ -1128,8 +1128,13 @@ async def upload_product_image(files: list[UploadFile] = File(...)):
 @router.get("/earnings", response_class=HTMLResponse)
 async def earnings_page(request: Request, db: Session = Depends(get_db)):
     """Page des revenus et retraits."""
-    (user, shop), redirect = _require_shop(request, db)
+    # ``_require_shop`` renvoie ``(None, redirect)`` quand il n'y a pas de
+    # boutique : déballer le premier élément avant de tester la redirection
+    # provoquait une erreur 500 pour tout compte sans boutique, le
+    # super-administrateur compris.
+    ctx, redirect = _require_shop(request, db)
     if redirect:
         return redirect
+    user, shop = ctx
 
     return templates.TemplateResponse(request, "merchant/earnings.html", {"shop": shop, "user": user})

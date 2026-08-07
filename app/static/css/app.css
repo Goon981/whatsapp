@@ -486,6 +486,19 @@ select {
 }
 .status { display: inline-flex; align-items: center; gap: 6px; }
 
+/* Page d'accueil : marque du bandeau et pictogrammes des étapes. */
+.hero-mark {
+  width: 68px; height: 68px; border-radius: var(--r-lg);
+  margin: var(--s2) auto var(--s5);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--brand-050); color: var(--brand-600);
+}
+.step-ic {
+  width: 38px; height: 38px; border-radius: var(--r-sm); flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--brand-050); color: var(--brand-600);
+}
+
 /* Vignette sans photo : un pictogramme discret plutôt qu'un emoji de panier. */
 .ph {
   display: flex; align-items: center; justify-content: center;
