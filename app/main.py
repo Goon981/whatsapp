@@ -20,7 +20,6 @@ from . import __version__, models
 from .config import settings
 from .database import get_db, init_db
 from .models import Shop, ShopStatus
-from .security import hash_password
 from .routers import (
     admin,
     auth,
@@ -125,29 +124,11 @@ def landing(request: Request):
 
 @app.get("/health", include_in_schema=False)
 def health():
-    return {"status": "ok", "version": __version__}
-
-
-@app.post("/init-admin", include_in_schema=False)
-def init_admin(db: Session = Depends(get_db)):
-    """Initialize superadmin account."""
-    admin = db.query(models.User).filter(models.User.email == "dorianlaroche200@mail.com").first()
-    if admin:
-        db.delete(admin)
-        db.commit()
-    password = "Laroche@690088572"
-    admin = models.User(
-        full_name="Dorian Laroche",
-        email="dorianlaroche200@mail.com",
-        phone="+237670000000",
-        password_hash=hash_password(password),
-        role=models.UserRole.SUPERADMIN,
-        is_active=True,
-        phone_verified=True
-    )
-    db.add(admin)
-    db.commit()
-    return {"status": "created", "email": admin.email, "password": password}
+    # Le moteur seul est exposé (jamais l'URL, qui porte les identifiants) :
+    # il permet de vérifier qu'une base persistante est bien branchée, "sqlite"
+    # signalant un stockage effacé à chaque déploiement.
+    backend = settings.DATABASE_URL.split("://", 1)[0]
+    return {"status": "ok", "version": __version__, "database": backend}
 
 
 # --- Frontend React SPA (fallback) ----------------------------------------- #
