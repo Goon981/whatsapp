@@ -3,12 +3,13 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+import hmac
 import httpx
 import logging
 
 from app.database import get_db
 from app.models import Shop, Subscription, SubscriptionPlan, SubscriptionStatus, ShopStatus, as_utc, utcnow
-from app.deps import require_shop_access
+from app.deps import require_shop_access, require_superadmin
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -140,11 +141,15 @@ async def get_subscription_status(
 
 
 @router.post("/check-expiry-and-notify")
-async def check_expiry_and_notify(db: Session = Depends(get_db)):
+async def check_expiry_and_notify(request: Request, db: Session = Depends(get_db)):
     """Vérifier expiration et envoyer notifications WhatsApp.
 
-    À appeler via cron job toutes les heures (en prod).
+    À appeler via cron job toutes les heures (en prod). La tâche suspend des
+    boutiques : elle exige le secret ``SMARTSHOP_CRON_SECRET``.
     """
+    provided = request.query_params.get("secret") or request.headers.get("X-Cron-Secret", "")
+    if not hmac.compare_digest(provided, settings.CRON_SECRET):
+        raise HTTPException(status_code=403, detail="Secret de tâche planifiée invalide")
 
     now = utcnow()
     shops = db.query(Shop).filter(Shop.is_deleted.is_(False)).all()
@@ -197,13 +202,18 @@ async def check_expiry_and_notify(db: Session = Depends(get_db)):
 @router.post("/validate-payment")
 async def validate_payment(
     payment: PaymentConfirmation,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Valider et confirmer le paiement AVANT de créer la subscription.
 
     Vérifie que le montant payé correspond EXACTEMENT au plan.
     Si le montant est insuffisant, rejette la transaction.
+
+    Cette route active un abonnement : elle exige le même secret que le
+    webhook, sans quoi n'importe qui pouvait s'en octroyer un.
     """
+    _authorize_campay_webhook(request)
 
     shop = db.query(Shop).filter(Shop.id == payment.shop_id).first()
     if not shop:
@@ -258,12 +268,17 @@ async def validate_payment(
 async def process_payment_sandbox(
     shop_id: int,
     plan: str,
+    superadmin=Depends(require_superadmin),
     db: Session = Depends(get_db)
 ):
     """Endpoint TEST SANDBOX pour traiter les paiements (sans API réelle).
 
-    À utiliser UNIQUEMENT pour les tests. En production, utiliser MTN MoMo/Orange Money.
+    Active un abonnement sans paiement : réservé au super-administrateur et
+    indisponible hors mode sandbox. Ouvert à tous, il offrait un abonnement
+    gratuit à qui connaissait l'URL.
     """
+    if settings.CAMPAY_MODE != "sandbox":
+        raise HTTPException(status_code=404, detail="Not Found")
 
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
     if not shop:
@@ -425,12 +440,36 @@ async def initiate_campay_payment(
     }
 
 
+def _authorize_campay_webhook(request: Request) -> None:
+    """Vérifie le secret partagé avec Campay.
+
+    Ce webhook active les abonnements : sans contrôle, n'importe qui pouvait
+    forger un appel et s'octroyer un abonnement payant. Le secret est déclaré
+    dans l'URL de rappel configurée chez Campay (``?key=…``) ou dans l'en-tête
+    ``X-Campay-Key``. Tant qu'aucun secret n'est configuré, la route refuse
+    d'agir plutôt que d'accepter n'importe quel appel.
+    """
+    expected = settings.CAMPAY_WEBHOOK_KEY
+    if not expected:
+        logger.error("CAMPAY_WEBHOOK_KEY non configuré : webhook refusé.")
+        raise HTTPException(
+            status_code=503,
+            detail="Webhook non configuré : définissez CAMPAY_WEBHOOK_KEY.",
+        )
+
+    provided = request.query_params.get("key") or request.headers.get("X-Campay-Key", "")
+    if not hmac.compare_digest(provided, expected):
+        logger.warning("Webhook Campay rejeté : secret invalide.")
+        raise HTTPException(status_code=403, detail="Signature de webhook invalide")
+
+
 @router.post("/campay/callback")
 async def campay_webhook(request: Request, db: Session = Depends(get_db)):
     """Webhook Campay pour confirmer les paiements.
 
     Reçoit les notifications de paiement depuis Campay et active l'abonnement.
     """
+    _authorize_campay_webhook(request)
 
     try:
         data = await request.json()

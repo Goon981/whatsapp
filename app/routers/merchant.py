@@ -68,6 +68,23 @@ def _active_shop(db: Session, user: models.User) -> models.Shop | None:
     )
 
 
+def _owned_category_id(db: Session, shop: models.Shop, raw: str) -> int | None:
+    """Convertit un ``category_id`` de formulaire, en le refusant s'il est étranger.
+
+    Le champ arrive du client : sans cette vérification, un commerçant peut
+    rattacher son produit à la catégorie d'une autre boutique.
+    """
+    if not raw or not raw.strip().isdigit():
+        return None
+    category_id = int(raw.strip())
+    exists = (
+        db.query(models.Category.id)
+        .filter(models.Category.id == category_id, models.Category.shop_id == shop.id)
+        .first()
+    )
+    return category_id if exists else None
+
+
 def _check_subscription_active(shop: models.Shop) -> bool:
     """Vérifie si la boutique a un abonnement actif (trial ou payant)"""
     try:
@@ -478,7 +495,7 @@ async def create_product(
         shop_id=shop.id, name=name, price=max(0, price), stock=max(0, stock),
         low_stock_threshold=max(0, low_stock_threshold),
         promo_price=int(promo_price) if promo_price.strip().isdigit() else None,
-        category_id=int(category_id) if category_id.strip().isdigit() else None,
+        category_id=_owned_category_id(db, shop, category_id),
         image_url=image_url.strip() or None, description=description.strip() or None,
     )
     db.add(product)
@@ -628,7 +645,7 @@ def update_product(
     product.stock = max(0, stock)
     product.low_stock_threshold = max(0, low_stock_threshold)
     product.promo_price = int(promo_price) if promo_price.strip().isdigit() else None
-    product.category_id = int(category_id) if category_id.strip().isdigit() else None
+    product.category_id = _owned_category_id(db, shop, category_id)
     product.description = description.strip() or None
 
     db.commit()
@@ -723,10 +740,13 @@ def delete_category(
     if not category:
         return _redirect("/app/categories")
 
-    # Vérifier si des produits utilisent cette catégorie
+    # Vérifier si des produits de cette boutique utilisent la catégorie.
     product_count = (
         db.query(models.Product)
-        .filter(models.Product.category_id == category_id)
+        .filter(
+            models.Product.category_id == category_id,
+            models.Product.shop_id == shop.id,
+        )
         .count()
     )
 

@@ -22,17 +22,47 @@ SHOP_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-def validate_image(file: UploadFile) -> bool:
-    """Valide le fichier image"""
+def validate_image(file: UploadFile) -> str:
+    """Valide le fichier image et retourne son extension normalisée."""
     if file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
         raise HTTPException(status_code=400, detail="Format d'image non autorisé")
 
-    # Vérifier l'extension
-    ext = file.filename.split('.')[-1].lower()
+    ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Extension non autorisée")
 
-    return True
+    return ext
+
+
+async def _read_within_limit(file: UploadFile) -> bytes:
+    """Lit le fichier en refusant tout dépassement de taille.
+
+    La lecture est bornée et effectuée avant toute écriture : contrôler la
+    taille après ``open()`` laissait un fichier vide sur le disque à chaque
+    envoi refusé, et lire sans borne exposait la mémoire du serveur.
+    """
+    content = await file.read(MAX_FILE_SIZE + 1)
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 5 Mo)")
+    if not content:
+        raise HTTPException(status_code=400, detail="Fichier vide")
+    return content
+
+
+def _user_shop(db: Session, user: models.User) -> models.Shop:
+    """Boutique du commerçant, en incluant celles où il est membre."""
+    shop = (
+        db.query(models.Shop)
+        .outerjoin(models.ShopMember, models.ShopMember.shop_id == models.Shop.id)
+        .filter(
+            models.Shop.is_deleted.is_(False),
+            (models.Shop.owner_id == user.id) | (models.ShopMember.user_id == user.id),
+        )
+        .first()
+    )
+    if not shop:
+        raise HTTPException(status_code=404, detail="Boutique non trouvée")
+    return shop
 
 
 @router.post("/product-image")
@@ -43,41 +73,18 @@ async def upload_product_image(
 ):
     """Upload une image de produit"""
 
-    try:
-        validate_image(file)
+    file_ext = validate_image(file)
+    _user_shop(db, user)
+    content = await _read_within_limit(file)
 
-        # Récupérer la boutique de l'utilisateur
-        shop = db.query(models.Shop).filter(
-            models.Shop.owner_id == user.id,
-            models.Shop.is_deleted.is_(False)
-        ).first()
+    unique_filename = f"{uuid.uuid4()}.{file_ext}"
+    (PRODUCT_DIR / unique_filename).write_bytes(content)
 
-        if not shop:
-            raise HTTPException(status_code=404, detail="Boutique non trouvée")
-
-        # Générer un nom unique
-        file_ext = file.filename.split('.')[-1].lower()
-        unique_filename = f"{uuid.uuid4()}.{file_ext}"
-        filepath = PRODUCT_DIR / unique_filename
-
-        # Sauvegarder le fichier
-        with open(filepath, "wb") as f:
-            content = await file.read()
-            if len(content) > MAX_FILE_SIZE:
-                raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 5MB)")
-            f.write(content)
-
-        # Retourner l'URL publique
-        return {
-            "success": True,
-            "url": f"/static/uploads/products/{unique_filename}",
-            "filename": unique_filename
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "success": True,
+        "url": f"/static/uploads/products/{unique_filename}",
+        "filename": unique_filename,
+    }
 
 
 @router.post("/shop-logo")
@@ -88,37 +95,17 @@ async def upload_shop_logo(
 ):
     """Upload le logo d'une boutique"""
 
-    try:
-        validate_image(file)
+    file_ext = validate_image(file)
+    shop = _user_shop(db, user)
+    content = await _read_within_limit(file)
 
-        # Récupérer la boutique de l'utilisateur
-        shop = db.query(models.Shop).filter(
-            models.Shop.owner_id == user.id,
-            models.Shop.is_deleted.is_(False)
-        ).first()
+    # Nom unique : réutiliser « shop_<id>.<ext> » laissait l'ancien logo en place
+    # lors d'un changement d'extension, et le cache servait la mauvaise image.
+    filename = f"shop_{shop.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+    (SHOP_DIR / filename).write_bytes(content)
 
-        if not shop:
-            raise HTTPException(status_code=404, detail="Boutique non trouvée")
-
-        # Utiliser shop_id comme nom
-        file_ext = file.filename.split('.')[-1].lower()
-        filename = f"shop_{shop.id}.{file_ext}"
-        filepath = SHOP_DIR / filename
-
-        # Sauvegarder
-        with open(filepath, "wb") as f:
-            content = await file.read()
-            if len(content) > MAX_FILE_SIZE:
-                raise HTTPException(status_code=413, detail="Fichier trop volumineux")
-            f.write(content)
-
-        return {
-            "success": True,
-            "url": f"/static/uploads/shops/{filename}",
-            "filename": filename
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "success": True,
+        "url": f"/static/uploads/shops/{filename}",
+        "filename": filename,
+    }

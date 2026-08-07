@@ -68,14 +68,27 @@ def price_cart(
     if not raw_items:
         raise PricingError("Le panier est vide.")
 
+    # Les quantités d'un même article sont cumulées avant tout contrôle : réparti
+    # sur plusieurs lignes, un panier passait la vérification ligne par ligne et
+    # permettait de commander au-delà du stock disponible.
+    grouped: dict[tuple[int, int | None], int] = {}
+    order_of_keys: list[tuple[int, int | None]] = []
     for item in raw_items:
         try:
-            product_id = int(item["product_id"])
-            quantity = int(item["quantity"])
+            key_product = int(item["product_id"])
+            key_quantity = int(item["quantity"])
         except (KeyError, TypeError, ValueError):
             raise PricingError("Ligne de panier invalide.")
-        if quantity <= 0:
+        if key_quantity <= 0:
             raise PricingError("La quantité doit être positive.")
+        raw_variant = item.get("variant_id")
+        key = (key_product, int(raw_variant) if raw_variant else None)
+        if key not in grouped:
+            order_of_keys.append(key)
+        grouped[key] = grouped.get(key, 0) + key_quantity
+
+    for (product_id, variant_id), quantity in ((k, grouped[k]) for k in order_of_keys):
+        item = {"product_id": product_id, "variant_id": variant_id, "quantity": quantity}
 
         product = (
             db.query(models.Product)
