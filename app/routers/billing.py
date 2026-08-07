@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+import httpx
 import logging
 
 from app.database import get_db
@@ -16,6 +17,13 @@ router = APIRouter(prefix="/api/billing", tags=["billing"])
 
 SUPPORT_NUMBER = "690088572"
 TRIAL_DAYS = 14
+
+# Campay expose deux environnements distincts (identifiants non interchangeables).
+CAMPAY_BASE_URLS = {
+    "sandbox": "https://demo.campay.net/api",
+    "production": "https://www.campay.net/api",
+}
+CAMPAY_TIMEOUT = 30.0
 
 PLAN_PRICES = {
     "starter": 5000,      # 1 mois
@@ -292,6 +300,56 @@ async def process_payment_sandbox(
     }
 
 
+def _campay_configured() -> bool:
+    """Campay n'est utilisable qu'avec un compte API complet."""
+    return bool(settings.CAMPAY_API_USER and settings.CAMPAY_API_PASSWORD)
+
+
+async def _campay_collect(reference: str, amount: int, phone: str, description: str) -> dict:
+    """Demande un paiement à Campay et renvoie sa réponse.
+
+    Lève ``httpx.HTTPError`` si Campay est injoignable et ``HTTPException``
+    si Campay refuse la demande : l'échec ne doit jamais être présenté au
+    commerçant comme un paiement initié.
+    """
+    base = CAMPAY_BASE_URLS.get(settings.CAMPAY_MODE, CAMPAY_BASE_URLS["sandbox"])
+
+    async with httpx.AsyncClient(timeout=CAMPAY_TIMEOUT) as client:
+        token_res = await client.post(
+            f"{base}/token/",
+            json={
+                "username": settings.CAMPAY_API_USER,
+                "password": settings.CAMPAY_API_PASSWORD,
+            },
+        )
+        if token_res.status_code != 200:
+            logger.error("Campay: authentification refusée (%s) %s", token_res.status_code, token_res.text)
+            raise HTTPException(status_code=502, detail="Authentification Campay refusée")
+
+        token = token_res.json().get("token")
+        if not token:
+            logger.error("Campay: réponse token inattendue %s", token_res.text)
+            raise HTTPException(status_code=502, detail="Réponse Campay invalide")
+
+        collect_res = await client.post(
+            f"{base}/collect/",
+            headers={"Authorization": f"Token {token}"},
+            json={
+                "amount": str(amount),
+                "currency": "XAF",
+                "from": phone,
+                "description": description,
+                "external_reference": reference,
+            },
+        )
+
+    if collect_res.status_code not in (200, 201):
+        logger.error("Campay: collecte refusée (%s) %s", collect_res.status_code, collect_res.text)
+        raise HTTPException(status_code=502, detail=f"Campay a refusé le paiement : {collect_res.text}")
+
+    return collect_res.json()
+
+
 @router.post("/campay/initiate")
 async def initiate_campay_payment(
     shop_id: int,
@@ -313,15 +371,17 @@ async def initiate_campay_payment(
         raise HTTPException(status_code=400, detail="Réseau non supporté")
 
     amount = PLAN_PRICES[plan]
-    reference = f"SHOP{shop_id}_{int(utcnow().timestamp())}"
+    # Le plan est encodé dans la référence : le webhook le relit directement
+    # au lieu de le déduire du montant reçu.
+    reference = f"SHOP{shop_id}_{plan}_{int(utcnow().timestamp())}"
 
     clean_phone = phone.replace("+", "").lstrip("0")
     if not clean_phone.startswith("237"):
         clean_phone = "237" + clean_phone
 
-    # En sandbox ou sans credentials, retourner une réponse de test
-    if settings.CAMPAY_MODE == "sandbox" or not settings.CAMPAY_APP_ID:
-        logger.info(f"Mode SANDBOX: Paiement {reference} pour {amount} FCFA sur {network}")
+    # Sans compte API configuré, aucun appel réel n'est possible : on simule.
+    if not _campay_configured():
+        logger.info("Mode SIMULATION: paiement %s de %s FCFA sur %s", reference, amount, network)
         return {
             "success": True,
             "reference": reference,
@@ -330,41 +390,38 @@ async def initiate_campay_payment(
             "amount": amount,
             "phone": clean_phone,
             "network": network,
-            "message": f"Paiement initié en mode test - {network}",
-            "redirect_url": f"/app/payment?reference={reference}&provider=campay&mode=sandbox",
-            "sandbox": True
+            "message": f"Paiement simulé - {network} (Campay non configuré)",
+            "redirect_url": f"/app/payment?reference={reference}&provider=campay&mode=simulation",
+            "simulated": True,
         }
 
-    # Mode production: appel à l'API Campay (utiliser requests ou urlib3 si httpx n'est pas disponible)
-    if settings.CAMPAY_API_USER and settings.CAMPAY_API_PASSWORD:
-        logger.info(f"Mode production: Initier paiement Campay pour {reference}")
-        # TODO: Intégrer httpx ou requests pour l'appel API réel
-        # Pour maintenant, retourner une réponse de test
-        return {
-            "success": True,
-            "reference": reference,
-            "shop_id": shop_id,
-            "plan": plan,
-            "amount": amount,
-            "phone": clean_phone,
-            "network": network,
-            "message": "Paiement initié - Veuillez confirmer sur votre téléphone",
-            "sandbox": False
-        }
+    logger.info("Campay (%s): initiation de %s pour %s FCFA", settings.CAMPAY_MODE, reference, amount)
+    try:
+        data = await _campay_collect(
+            reference=reference,
+            amount=amount,
+            phone=clean_phone,
+            description=f"Abonnement BAOBAY {plan} - {shop.name}",
+        )
+    except HTTPException:
+        raise
+    except httpx.HTTPError as exc:
+        logger.error("Campay injoignable pour %s : %s", reference, exc)
+        raise HTTPException(status_code=502, detail="Service de paiement injoignable. Réessayez.")
 
-    # Fallback sandbox
-    logger.info(f"Mode SANDBOX: Paiement {reference} pour {amount} FCFA sur {network}")
     return {
         "success": True,
         "reference": reference,
+        "campay_reference": data.get("reference"),
+        "ussd_code": data.get("ussd_code"),
+        "operator": data.get("operator", network),
         "shop_id": shop_id,
         "plan": plan,
         "amount": amount,
         "phone": clean_phone,
         "network": network,
-        "message": f"Paiement initié en mode test - {network}",
-        "redirect_url": f"/app/payment?reference={reference}&provider=campay&mode=sandbox",
-        "sandbox": True
+        "message": "Paiement initié - confirmez la demande sur votre téléphone",
+        "simulated": False,
     }
 
 
@@ -381,32 +438,43 @@ async def campay_webhook(request: Request, db: Session = Depends(get_db)):
         logger.error(f"Invalid webhook payload: {e}")
         return {"error": "Invalid payload"}
 
-    reference = data.get("reference")
-    status = data.get("status", "").lower()
+    # Campay renvoie sa propre référence dans "reference" et la nôtre dans
+    # "external_reference" : c'est celle-ci qui porte le shop_id et le plan.
+    reference = data.get("external_reference") or data.get("reference")
+    status = str(data.get("status", "")).lower()
     amount = data.get("amount")
     phone = data.get("phone")
 
-    logger.info(f"Campay webhook received: {reference} - {status}")
+    logger.info("Campay webhook reçu : %s - %s", reference, status)
 
     if not reference:
-        logger.error("No reference in webhook")
+        logger.error("Webhook sans référence exploitable")
         return {"error": "No reference"}
 
     # Cas de succès
     if status in ["successful", "success"]:
         try:
-            # Parser le shop_id depuis la référence (format: SHOP123_timestamp)
+            # Référence au format SHOP<id>_<plan>_<timestamp>. Les références
+            # émises avant l'ajout du plan (SHOP<id>_<timestamp>) restent lisibles.
             parts = reference.split("_")
             shop_id = int(parts[0].replace("SHOP", ""))
 
             shop = db.query(Shop).filter(Shop.id == shop_id).first()
             if not shop:
-                logger.error(f"Shop not found: {shop_id}")
+                logger.error("Boutique introuvable : %s", shop_id)
                 return {"error": "Shop not found"}
 
-            # Mapper le montant au plan
-            plans_map = {5000: "starter", 12000: "business", 50000: "premium"}
-            plan = plans_map.get(amount, "starter")
+            plan = parts[1] if len(parts) > 2 and parts[1] in PLAN_PRICES else None
+            if plan is None:
+                # Repli : déduire le plan du montant. Campay peut l'envoyer en
+                # texte ("12000" ou "12000.00"), d'où la conversion explicite —
+                # sans elle la correspondance échouait et tout paiement était
+                # traité comme le plan le moins cher.
+                try:
+                    paid = int(float(amount))
+                except (TypeError, ValueError):
+                    paid = 0
+                plan = {v: k for k, v in PLAN_PRICES.items()}.get(paid, "starter")
 
             durations = {"starter": 1, "business": 3, "premium": 12}
             duration = durations[plan]
@@ -416,7 +484,7 @@ async def campay_webhook(request: Request, db: Session = Depends(get_db)):
             sub.plan = SubscriptionPlan[plan.upper()]
             sub.current_period_end = utcnow() + timedelta(days=duration * 30)
             sub.status = SubscriptionStatus.ACTIVE
-            sub.amount = amount
+            sub.amount = PLAN_PRICES[plan]
             sub.last_payment_at = utcnow()
 
             db.add(sub)
