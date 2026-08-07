@@ -24,14 +24,6 @@ PLAN_PRICES = {
 }
 
 
-class SubscriptionPlan(BaseModel):
-    """Plan d'abonnement disponible."""
-    name: str           # "starter", "business", "premium"
-    duration_months: int
-    price: int         # FCFA
-    description: str
-
-
 class PaymentRequest(BaseModel):
     """Demande de paiement."""
     plan: str          # "starter", "business", "premium"
@@ -88,7 +80,21 @@ async def get_subscription_status(
 
     now = utcnow()
 
-    # Vérifier le trial
+    # Un abonnement payé prime sur l'essai : le webhook prolonge aussi
+    # trial_expires_at pour garder l'accès ouvert, donc tester l'essai d'abord
+    # annoncerait « en essai » à un client qui vient de payer.
+    sub = shop.subscription
+    if sub and sub.current_period_end and as_utc(sub.current_period_end) > now:
+        days_remaining = (as_utc(sub.current_period_end) - now).days
+        return {
+            "status": "active",
+            "plan": str(sub.plan),
+            "days_remaining": days_remaining,
+            "expires_at": str(sub.current_period_end),
+            "message": f"Abonnement actif. Expire dans {days_remaining} jours"
+        }
+
+    # Sinon, l'essai en cours
     if shop.trial_expires_at:
         days_remaining = (as_utc(shop.trial_expires_at) - now).days
         if days_remaining > 0:
@@ -100,40 +106,29 @@ async def get_subscription_status(
                 "payment_url": f"/app/payment?shop_id={shop_id}",
                 "support": SUPPORT_NUMBER
             }
-        elif days_remaining <= 0:
-            return {
-                "status": "trial_expired",
-                "message": "Votre trial a expire. Paiement requis.",
-                "payment_url": f"/app/payment?shop_id={shop_id}",
-                "support": SUPPORT_NUMBER
-            }
 
-    # Vérifier la subscription
-    sub = shop.subscription
-    if not sub:
-        return {
-            "status": "no_subscription",
-            "message": "Pas d'abonnement actif",
-            "payment_url": f"/app/payment?shop_id={shop_id}",
-            "support": SUPPORT_NUMBER
-        }
-
-    if sub.current_period_end and as_utc(sub.current_period_end) > now:
-        days_remaining = (as_utc(sub.current_period_end) - now).days
-        return {
-            "status": "active",
-            "plan": str(sub.plan),
-            "days_remaining": days_remaining,
-            "expires_at": str(sub.current_period_end),
-            "message": f"Abonnement actif. Expire dans {days_remaining} jours"
-        }
-    else:
+    if sub:
         return {
             "status": "expired",
             "message": "Abonnement expire. Paiement requis.",
             "payment_url": f"/app/payment?shop_id={shop_id}",
             "support": SUPPORT_NUMBER
         }
+
+    if shop.trial_expires_at:
+        return {
+            "status": "trial_expired",
+            "message": "Votre trial a expire. Paiement requis.",
+            "payment_url": f"/app/payment?shop_id={shop_id}",
+            "support": SUPPORT_NUMBER
+        }
+
+    return {
+        "status": "no_subscription",
+        "message": "Pas d'abonnement actif",
+        "payment_url": f"/app/payment?shop_id={shop_id}",
+        "support": SUPPORT_NUMBER
+    }
 
 
 @router.post("/check-expiry-and-notify")
@@ -421,8 +416,8 @@ async def campay_webhook(request: Request, db: Session = Depends(get_db)):
             sub.plan = SubscriptionPlan[plan.upper()]
             sub.current_period_end = utcnow() + timedelta(days=duration * 30)
             sub.status = SubscriptionStatus.ACTIVE
-            sub.reference = reference
-            sub.payment_method = "campay"
+            sub.amount = amount
+            sub.last_payment_at = utcnow()
 
             db.add(sub)
 
