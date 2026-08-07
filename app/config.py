@@ -33,9 +33,14 @@ class Settings:
     )
 
     # Base de données. SQLite par défaut ; PostgreSQL recommandé en production (NFR 12).
-    DATABASE_URL: str = os.getenv(
-        "SMARTSHOP_DATABASE_URL", f"sqlite:///{PROJECT_DIR / 'smartshop.db'}"
-    )
+    # Accepte SMARTSHOP_DATABASE_URL (préféré) ou DATABASE_URL (nom fourni par
+    # l'add-on PostgreSQL de Railway). "postgres://" est normalisé en
+    # "postgresql://" car SQLAlchemy 2.x n'accepte plus l'ancien préfixe.
+    DATABASE_URL: str = (
+        os.getenv("SMARTSHOP_DATABASE_URL")
+        or os.getenv("DATABASE_URL")
+        or f"sqlite:///{PROJECT_DIR / 'smartshop.db'}"
+    ).replace("postgres://", "postgresql://", 1)
 
     # Durée de vie de la session commerçant / admin (secondes).
     SESSION_MAX_AGE: int = int(os.getenv("SMARTSHOP_SESSION_MAX_AGE", str(60 * 60 * 24 * 7)))
