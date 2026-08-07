@@ -3,10 +3,15 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+import httpx
+import logging
 
 from app.database import get_db
 from app.models import Shop, Subscription, SubscriptionPlan, SubscriptionStatus, ShopStatus, utcnow
 from app.deps import require_shop_access
+from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
@@ -301,7 +306,7 @@ async def initiate_campay_payment(
     network: str = "MTN",
     db: Session = Depends(get_db)
 ):
-    """Initie un paiement via Campay (MTN, Orange, Airtel)"""
+    """Initie un paiement via Campay (MTN, Orange, Airtel)."""
 
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
     if not shop:
@@ -314,62 +319,175 @@ async def initiate_campay_payment(
         raise HTTPException(status_code=400, detail="Réseau non supporté")
 
     amount = PLAN_PRICES[plan]
-    reference = f"SHOP{shop_id}_{utcnow().timestamp()}"
+    reference = f"SHOP{shop_id}_{int(utcnow().timestamp())}"
 
     clean_phone = phone.replace("+", "").lstrip("0")
     if not clean_phone.startswith("237"):
         clean_phone = "237" + clean_phone
 
-    return {
-        "success": True,
-        "reference": reference,
-        "shop_id": shop_id,
-        "plan": plan,
-        "amount": amount,
-        "phone": clean_phone,
-        "network": network,
-        "message": f"Paiement Campay initié - {network}",
-        "redirect_url": f"/app/payment?reference={reference}&provider=campay"
-    }
+    # En sandbox ou sans credentials, retourner une réponse de test
+    if settings.CAMPAY_MODE == "sandbox" or not settings.CAMPAY_APP_ID:
+        logger.info(f"Mode SANDBOX: Paiement {reference} pour {amount} FCFA sur {network}")
+        return {
+            "success": True,
+            "reference": reference,
+            "shop_id": shop_id,
+            "plan": plan,
+            "amount": amount,
+            "phone": clean_phone,
+            "network": network,
+            "message": f"Paiement initié en mode test - {network}",
+            "redirect_url": f"/app/payment?reference={reference}&provider=campay&mode=sandbox",
+            "sandbox": True
+        }
+
+    # Mode production: appel réel à l'API Campay
+    try:
+        async with httpx.AsyncClient() as client:
+            campay_url = "https://api.campay.net/api/send/"
+
+            payload = {
+                "phone": clean_phone,
+                "amount": amount,
+                "description": f"BAOBAY {plan.upper()} - {reference}",
+                "reference": reference,
+                "redirect_url": f"{settings.PUBLIC_BASE_URL}/api/billing/campay/callback",
+                "external_reference": reference,
+            }
+
+            auth = (settings.CAMPAY_API_USER, settings.CAMPAY_API_PASSWORD)
+
+            response = await client.post(
+                campay_url,
+                json=payload,
+                auth=auth,
+                timeout=10
+            )
+
+            response.raise_for_status()
+            data = response.json()
+
+            logger.info(f"Campay initiate success: {reference}")
+
+            return {
+                "success": True,
+                "reference": reference,
+                "shop_id": shop_id,
+                "plan": plan,
+                "amount": amount,
+                "phone": clean_phone,
+                "network": network,
+                "message": "Veuillez confirmer le paiement sur votre téléphone",
+                "campay_reference": data.get("reference"),
+                "sandbox": False
+            }
+
+    except httpx.HTTPError as e:
+        logger.error(f"Campay API error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur paiement: {str(e)}"
+        )
 
 
 @router.post("/campay/callback")
 async def campay_webhook(request: Request, db: Session = Depends(get_db)):
-    """Webhook Campay pour confirmer les paiements"""
+    """Webhook Campay pour confirmer les paiements.
 
-    data = await request.json()
+    Reçoit les notifications de paiement depuis Campay et active l'abonnement.
+    """
+
+    try:
+        data = await request.json()
+    except Exception as e:
+        logger.error(f"Invalid webhook payload: {e}")
+        return {"error": "Invalid payload"}
 
     reference = data.get("reference")
-    status = data.get("status")
+    status = data.get("status", "").lower()
     amount = data.get("amount")
     phone = data.get("phone")
 
-    if status == "successful":
-        try:
-            shop_id = int(reference.split("_")[0].replace("SHOP", ""))
-            shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    logger.info(f"Campay webhook received: {reference} - {status}")
 
+    if not reference:
+        logger.error("No reference in webhook")
+        return {"error": "No reference"}
+
+    # Cas de succès
+    if status in ["successful", "success"]:
+        try:
+            # Parser le shop_id depuis la référence (format: SHOP123_timestamp)
+            parts = reference.split("_")
+            shop_id = int(parts[0].replace("SHOP", ""))
+
+            shop = db.query(Shop).filter(Shop.id == shop_id).first()
             if not shop:
+                logger.error(f"Shop not found: {shop_id}")
                 return {"error": "Shop not found"}
 
+            # Mapper le montant au plan
             plans_map = {5000: "starter", 12000: "business", 50000: "premium"}
             plan = plans_map.get(amount, "starter")
 
             durations = {"starter": 1, "business": 3, "premium": 12}
             duration = durations[plan]
 
+            # Créer ou mettre à jour l'abonnement
             sub = shop.subscription or Subscription(shop_id=shop_id)
             sub.plan = SubscriptionPlan[plan.upper()]
             sub.current_period_end = utcnow() + timedelta(days=duration * 30)
             sub.status = SubscriptionStatus.ACTIVE
+            sub.reference = reference
+            sub.payment_method = "campay"
 
             db.add(sub)
+
+            # Mettre à jour le shop
             shop.trial_expires_at = utcnow() + timedelta(days=duration * 30)
             db.add(shop)
             db.commit()
 
-            return {"success": True, "message": "Subscription créée"}
+            logger.info(f"Subscription activated: shop={shop_id} plan={plan}")
+
+            return {
+                "success": True,
+                "message": "Subscription créée",
+                "shop_id": shop_id,
+                "plan": plan,
+                "reference": reference
+            }
+
+        except ValueError as e:
+            logger.error(f"Invalid reference format: {reference} - {e}")
+            return {"error": "Invalid reference format"}
         except Exception as e:
+            logger.error(f"Error processing payment: {e}")
+            db.rollback()
             return {"error": str(e)}
 
-    return {"status": status, "reference": reference}
+    # Cas d'échec
+    elif status in ["failed", "error", "cancelled"]:
+        logger.warning(f"Payment failed: {reference} - {status}")
+        return {
+            "success": False,
+            "status": status,
+            "reference": reference,
+            "message": "Paiement échoué. Veuillez réessayer."
+        }
+
+    # Cas en attente
+    elif status == "pending":
+        logger.info(f"Payment pending: {reference}")
+        return {
+            "success": None,
+            "status": "pending",
+            "reference": reference,
+            "message": "Paiement en attente de confirmation"
+        }
+
+    return {
+        "status": status,
+        "reference": reference,
+        "message": f"Status inconnu: {status}"
+    }
