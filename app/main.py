@@ -122,13 +122,37 @@ def landing(request: Request):
     return templates.TemplateResponse(request, "landing.html", {"demo_shop": demo_slug})
 
 
+def _describe_env(name: str) -> str:
+    """État d'une variable d'environnement, sans jamais en révéler la valeur."""
+    import os
+
+    raw = os.getenv(name)
+    if raw is None:
+        return "absente"
+    if not raw.strip():
+        return "définie mais vide"
+    if raw.strip().startswith("${{"):
+        return "référence non résolue par Railway"
+    scheme = raw.split("://", 1)[0] if "://" in raw else "valeur sans schéma"
+    return f"définie ({scheme})"
+
+
 @app.get("/health", include_in_schema=False)
 def health():
     # Le moteur seul est exposé (jamais l'URL, qui porte les identifiants) :
     # il permet de vérifier qu'une base persistante est bien branchée, "sqlite"
-    # signalant un stockage effacé à chaque déploiement.
+    # signalant un stockage effacé à chaque déploiement. Le détail des variables
+    # indique laquelle manque quand la base attendue n'est pas celle utilisée.
     backend = settings.DATABASE_URL.split("://", 1)[0]
-    return {"status": "ok", "version": __version__, "database": backend}
+    return {
+        "status": "ok",
+        "version": __version__,
+        "database": backend,
+        "env": {
+            "SMARTSHOP_DATABASE_URL": _describe_env("SMARTSHOP_DATABASE_URL"),
+            "DATABASE_URL": _describe_env("DATABASE_URL"),
+        },
+    }
 
 
 # --- Frontend React SPA (fallback) ----------------------------------------- #

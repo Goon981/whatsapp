@@ -20,6 +20,31 @@ def _get_bool(name: str, default: bool) -> bool:
     return val.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _database_url() -> str:
+    """URL de base de données, avec repli sur SQLite si elle est inexploitable.
+
+    Une référence Railway non résolue (``${{Service.VAR}}`` laissé tel quel)
+    faisait échouer la création du moteur au démarrage, donc tomber tout le
+    site. Mieux vaut démarrer sur SQLite et le signaler via ``/health``.
+    """
+    raw = (os.getenv("SMARTSHOP_DATABASE_URL") or os.getenv("DATABASE_URL") or "").strip()
+    fallback = f"sqlite:///{PROJECT_DIR / 'smartshop.db'}"
+    if not raw:
+        return fallback
+
+    url = raw.replace("postgres://", "postgresql://", 1)
+    scheme = url.split("://", 1)[0] if "://" in url else ""
+    if not scheme or not scheme.replace("+", "").isalnum():
+        import logging
+
+        logging.getLogger("smartshop").error(
+            "URL de base de données inexploitable (référence non résolue ?) : "
+            "repli sur SQLite, les données ne survivront pas au déploiement."
+        )
+        return fallback
+    return url
+
+
 class Settings:
     """Paramètres applicatifs lus depuis l'environnement."""
 
@@ -36,11 +61,7 @@ class Settings:
     # Accepte SMARTSHOP_DATABASE_URL (préféré) ou DATABASE_URL (nom fourni par
     # l'add-on PostgreSQL de Railway). "postgres://" est normalisé en
     # "postgresql://" car SQLAlchemy 2.x n'accepte plus l'ancien préfixe.
-    DATABASE_URL: str = (
-        os.getenv("SMARTSHOP_DATABASE_URL")
-        or os.getenv("DATABASE_URL")
-        or f"sqlite:///{PROJECT_DIR / 'smartshop.db'}"
-    ).replace("postgres://", "postgresql://", 1)
+    DATABASE_URL: str = _database_url()
 
     # Durée de vie de la session commerçant / admin (secondes).
     SESSION_MAX_AGE: int = int(os.getenv("SMARTSHOP_SESSION_MAX_AGE", str(60 * 60 * 24 * 7)))
