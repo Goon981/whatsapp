@@ -30,6 +30,7 @@ from .routers import (
     merchant,
     orders,
     payments,
+    setup,
     shops,
     stats,
     storefront,
@@ -90,6 +91,7 @@ app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="stat
 # --- API REST (OpenAPI) ---------------------------------------------------- #
 app.include_router(auth.router)
 app.include_router(billing.router)
+app.include_router(setup.router)
 app.include_router(shops.router)
 app.include_router(catalog.router)
 app.include_router(orders.router)

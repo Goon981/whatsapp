@@ -56,6 +56,12 @@ class Settings:
     # Secret pour l'endpoint cron (suspension auto des abonnements impayés).
     CRON_SECRET: str = os.getenv("SMARTSHOP_CRON_SECRET", "dev-cron-secret")
 
+    # Bootstrap du super-administrateur après un déploiement neuf. L'endpoint
+    # /api/setup/create-superadmin reste inerte tant que ce jeton est vide.
+    SETUP_TOKEN: str = os.getenv("SMARTSHOP_SETUP_TOKEN", "")
+    ADMIN_EMAIL: str = os.getenv("SMARTSHOP_ADMIN_EMAIL", "")
+    ADMIN_PASSWORD: str = os.getenv("SMARTSHOP_ADMIN_PASSWORD", "")
+
     # Base publique utilisée pour construire les liens de boutique et QR codes.
     PUBLIC_BASE_URL: str = os.getenv("SMARTSHOP_PUBLIC_BASE_URL", "http://localhost:8000")
 
