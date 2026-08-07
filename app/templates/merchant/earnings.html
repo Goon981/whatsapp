@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Mes Revenus - BAOBAY</title>
-    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    {{ theme_style(shop if shop is defined else None)|safe }}
     <style>
         .earnings-header {
-            background: linear-gradient(135deg, #25d366 0%, #128c4f 100%);
+            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-600) 100%);
             color: white;
             padding: 24px;
             border-radius: 12px;
@@ -33,24 +34,24 @@
             margin-bottom: 24px;
         }
         .stat-card {
-            background: #fff;
-            border: 1px solid #eee;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 16px;
             text-align: center;
         }
         .stat-card .label {
-            color: #666;
+            color: var(--muted);
             font-size: 13px;
             margin-bottom: 8px;
         }
         .stat-card .amount {
             font-size: 20px;
             font-weight: 700;
-            color: #25d366;
+            color: var(--brand-600);
         }
         .withdraw-btn {
-            background: #25d366;
+            background: var(--brand);
             color: white;
             border: none;
             padding: 14px 24px;
@@ -74,18 +75,18 @@
             border-collapse: collapse;
         }
         .payment-table th {
-            background: #f5f5f5;
+            background: var(--surface-2);
             padding: 12px;
             text-align: left;
             font-weight: 600;
-            border-bottom: 2px solid #eee;
+            border-bottom: 2px solid var(--border);
         }
         .payment-table td {
             padding: 12px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border);
         }
         .payment-table tr:hover {
-            background: #f9f9f9;
+            background: var(--surface-2);
         }
         .status-badge {
             display: inline-block;
@@ -95,21 +96,21 @@
             font-weight: 600;
         }
         .status-paid {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: var(--brand-050);
+            color: var(--brand-600);
         }
         .status-pending {
-            background: #fff3e0;
-            color: #e65100;
+            background: var(--amber-bg);
+            color: var(--amber-fg);
         }
         .status-withdrawn {
-            background: #e3f2fd;
-            color: #1565c0;
+            background: var(--blue-bg);
+            color: var(--blue-fg);
         }
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #999;
+            color: var(--muted);
         }
         .empty-state .icon {
             font-size: 48px;
@@ -119,7 +120,7 @@
 </head>
 <body>
     <header class="topbar">
-        <a href="/app/dashboard" class="icon-btn">←</a>
+        <a href="/app/dashboard" class="icon-btn">{{ icon('arrow-left', 18) }}</a>
         <strong>Mes Revenus</strong>
         <span class="top-spacer"></span>
     </header>
@@ -152,7 +153,7 @@
 
             <!-- Withdraw Button -->
             <button class="withdraw-btn" id="withdrawBtn" onclick="initiateWithdraw()" disabled>
-                💳 Retirer les revenus
+                {{ icon('credit-card', 18) }} Retirer les revenus
             </button>
 
             <!-- Transactions Table -->
@@ -170,7 +171,7 @@
                     <tbody id="paymentsTableBody">
                         <tr>
                             <td colspan="4" class="empty-state">
-                                <div class="icon">💰</div>
+                                <div class="icon">{{ icon('wallet', 18) }}</div>
                                 <div>Aucun paiement reçu pour l'instant</div>
                                 <div style="font-size: 13px; margin-top: 8px;">Vos paiements apparaîtront ici</div>
                             </td>
@@ -180,9 +181,9 @@
             </div>
 
             <!-- Info -->
-            <div style="background: #f0f8f5; border-left: 4px solid #25d366; padding: 16px; margin-top: 24px; border-radius: 4px;">
-                <strong style="color: #25d366;">💡 Comment ça marche?</strong>
-                <ul style="margin: 12px 0 0 20px; font-size: 14px; color: #666;">
+            <div style="background: var(--brand-050); border-left: 4px solid var(--brand); padding: 16px; margin-top: 24px; border-radius: 4px;">
+                <strong style="color: var(--brand-600);">{{ icon('bulb', 18) }} Comment ça marche?</strong>
+                <ul style="margin: 12px 0 0 20px; font-size: 14px; color: var(--muted);">
                     <li>Chaque paiement client est reçu via Campay</li>
                     <li>BAOBAY prend 5% de commission (pour frais d'hébergement)</li>
                     <li>Vous recevez 95% du montant</li>
@@ -222,7 +223,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="4" class="empty-state">
-                            <div class="icon">💰</div>
+                            <div class="icon">{{ icon('wallet', 34) }}</div>
                             <div>Aucun paiement reçu pour l'instant</div>
                         </td>
                     </tr>
@@ -233,7 +234,7 @@
                         <td>${new Date(p.date).toLocaleDateString('fr-FR')}</td>
                         <td><strong>${formatCurrency(p.amount)}</strong></td>
                         <td><code style="font-size: 12px;">${p.reference}</code></td>
-                        <td><span class="status-badge status-${p.status}">${p.status === 'paid' ? '✓ Payé' : 'En attente'}</span></td>
+                        <td><span class="status-badge status-${p.status}">${p.status === 'paid' ? 'Payé' : 'En attente'}</span></td>
                     </tr>
                 `).join('');
             }
@@ -247,7 +248,7 @@
             }
 
             if (confirm(`Retirer ${formatCurrency(available)} vers votre compte Campay?`)) {
-                alert('✓ Retrait initié!\n\nL\'argent devrait arriver dans votre wallet Campay dans 1-2 minutes.');
+                alert('Retrait initié!\n\nL\'argent devrait arriver dans votre wallet Campay dans 1-2 minutes.');
                 // API call would go here
             }
         }

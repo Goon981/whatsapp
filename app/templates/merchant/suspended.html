@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Compte suspendu · BAOBAY</title>
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+  {{ theme_style(shop if shop is defined else None)|safe }}
 </head>
 <body>
-  <header class="topbar"><div class="container"><div class="logo-badge">🛍️</div><h1>BAOBAY</h1></div></header>
+  <header class="topbar"><div class="container"><div class="logo-badge">{{ icon('bag', 18) }}</div><h1>BAOBAY</h1></div></header>
   <main class="container page">
     <div class="card center">
-      <div style="font-size:3rem">⛔</div>
+      <div style="font-size:3rem">{{ icon('lock', 44) }}</div>
       <h2>Boutique désactivée</h2>
       <p class="muted">
         {% if reason == 'Abonnement impayé' %}
@@ -27,7 +28,7 @@
         <div class="between"><span class="muted">Montant dû</span><strong>{{ shop.subscription.amount|fcfa }} / mois</strong></div>
       </div>
       {% endif %}
-      <a class="btn wa block" href="https://wa.me/{{ support_number }}?text=Bonjour,%20je%20souhaite%20réactiver%20ma%20boutique%20{{ shop.name|urlencode }}">💬 Contacter le support</a>
+      <a class="btn wa block" href="https://wa.me/{{ support_number }}?text=Bonjour,%20je%20souhaite%20réactiver%20ma%20boutique%20{{ shop.name|urlencode }}">{{ icon('message', 18) }} Contacter le support</a>
       <a class="btn outline block mt" href="/app/logout">Se déconnecter</a>
     </div>
   </main>

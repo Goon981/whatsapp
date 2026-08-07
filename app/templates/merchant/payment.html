@@ -4,11 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Abonnement & Paiement - BAOBAY</title>
-    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    {{ theme_style(shop if shop is defined else None)|safe }}
     <style>
         .trial-banner {
-            background: #e8f5e9;
-            border: 1px solid #4caf50;
+            background: var(--brand-050);
+            border: 1px solid var(--brand);
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 24px;
@@ -17,14 +18,14 @@
 
         .trial-banner strong {
             display: block;
-            color: #2e7d32;
+            color: var(--brand-600);
             font-size: 16px;
             margin-top: 8px;
         }
 
         .trial-banner small {
             display: block;
-            color: #558b2f;
+            color: var(--brand-600);
             margin-top: 4px;
         }
 
@@ -35,23 +36,23 @@
         }
 
         .plan-card {
-            border: 2px solid #ddd;
+            border: 2px solid var(--border);
             border-radius: 8px;
             padding: 16px;
             cursor: pointer;
             transition: all 0.2s;
-            background: #fff;
+            background: var(--surface);
             text-align: left;
         }
 
         .plan-card:hover {
-            border-color: #25d366;
-            background: #f0f8f5;
+            border-color: var(--brand-600);
+            background: var(--brand-050);
         }
 
         .plan-card.selected {
-            border: 2px solid #25d366;
-            background: #f0f8f5;
+            border: 2px solid var(--brand);
+            background: var(--brand-050);
         }
 
         .plan-header {
@@ -63,7 +64,7 @@
 
         .plan-name {
             font-weight: 600;
-            color: #25d366;
+            color: var(--brand-600);
             display: block;
             margin-bottom: 4px;
         }
@@ -71,12 +72,12 @@
         .plan-price {
             font-size: 18px;
             font-weight: bold;
-            color: #25d366;
+            color: var(--brand-600);
         }
 
         .plan-per-day {
             font-size: 12px;
-            color: #999;
+            color: var(--muted);
             margin-top: 8px;
             display: block;
         }
@@ -88,22 +89,22 @@
         }
 
         .payment-method {
-            border: 2px solid #ddd;
+            border: 2px solid var(--border);
             border-radius: 12px;
             padding: 14px 16px;
             text-align: center;
             cursor: pointer;
-            background: #fff;
+            background: var(--surface);
             transition: all 0.2s;
             font-size: 15px;
             font-weight: 600;
-            color: #333;
+            color: var(--text);
             box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
 
         .payment-method:hover {
-            border-color: #25d366;
-            background: #f0f8f5;
+            border-color: var(--brand-600);
+            background: var(--brand-050);
             box-shadow: 0 3px 8px rgba(37, 211, 102, 0.2);
         }
 
@@ -112,14 +113,14 @@
         }
 
         .support-banner {
-            background: #fff3e0;
-            border: 1px solid #ff9800;
+            background: var(--amber-bg);
+            border: 1px solid var(--amber-fg);
             border-radius: 8px;
             padding: 12px;
             text-align: center;
             margin-bottom: 20px;
             font-size: 13px;
-            color: #e65100;
+            color: var(--amber-fg);
         }
 
         .support-banner b {
@@ -128,8 +129,8 @@
         }
 
         .primary {
-            background: #25d366;
-            color: #fff;
+            background: var(--brand);
+            color: var(--surface);
             border: none;
             width: 100%;
             padding: 14px;
@@ -157,8 +158,8 @@
 
         .secondary {
             background: transparent;
-            color: #25d366;
-            border: 2px solid #25d366;
+            color: var(--brand-600);
+            border: 2px solid var(--brand);
             width: 100%;
             padding: 12px;
             border-radius: 12px;
@@ -170,7 +171,7 @@
         }
 
         .secondary:hover {
-            background: #f0f8f5;
+            background: var(--brand-050);
             box-shadow: 0 2px 8px rgba(37, 211, 102, 0.2);
         }
 
@@ -193,29 +194,29 @@
 
         .payment-msg.err {
             display: block;
-            background: #fdecea;
-            border: 1px solid #e53935;
-            color: #b71c1c;
+            background: var(--red-bg);
+            border: 1px solid var(--red-fg);
+            color: var(--red-fg);
         }
 
         .payment-msg.ok {
             display: block;
-            background: #e8f5e9;
-            border: 1px solid #4caf50;
-            color: #2e7d32;
+            background: var(--brand-050);
+            border: 1px solid var(--brand);
+            color: var(--brand-600);
         }
 
         .payment-msg.info {
             display: block;
-            background: #e3f2fd;
-            border: 1px solid #1e88e5;
-            color: #0d47a1;
+            background: var(--blue-bg);
+            border: 1px solid var(--blue-fg);
+            color: var(--blue-fg);
         }
     </style>
 </head>
 <body>
     <header class="topbar">
-        <a href="/app" class="icon-btn">←</a>
+        <a href="/app" class="icon-btn">{{ icon('arrow-left', 18) }}</a>
         <strong>Abonnement & Paiement</strong>
         <span class="top-spacer"></span>
     </header>
@@ -223,7 +224,7 @@
     <main class="container page">
         <section class="content">
             <div class="trial-banner">
-                <div>✓</div>
+                <div>{{ icon('check', 18) }}</div>
                 <strong>Vous avez 14 jours pour payer</strong>
                 <small>Choisissez un plan ou continuez sans payer pour accéder au tableau de bord</small>
             </div>
@@ -266,10 +267,10 @@
 
             <h3>Moyens de paiement</h3>
             <div class="payment-methods">
-                <button class="payment-method" onclick="selectPaymentMethod('MTN', this)">📱 MTN Mobile Money</button>
-                <button class="payment-method" onclick="selectPaymentMethod('ORANGE', this)">🟠 Orange Money</button>
-                <button class="payment-method" onclick="selectPaymentMethod('AIRTEL', this)">💳 Airtel Money</button>
-                <button class="payment-method" onclick="selectPaymentMethod('CARD', this)">💳 Carte bancaire</button>
+                <button class="payment-method" onclick="selectPaymentMethod('MTN', this)">{{ icon('phone', 18) }} MTN Mobile Money</button>
+                <button class="payment-method" onclick="selectPaymentMethod('ORANGE', this)">{{ icon('phone', 20) }} Orange Money</button>
+                <button class="payment-method" onclick="selectPaymentMethod('AIRTEL', this)">{{ icon('credit-card', 18) }} Airtel Money</button>
+                <button class="payment-method" onclick="selectPaymentMethod('CARD', this)">{{ icon('credit-card', 18) }} Carte bancaire</button>
             </div>
 
             <div class="support-banner">
@@ -277,7 +278,7 @@
                 +237 690088572
             </div>
 
-            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <div style="background: var(--surface-2); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
                 <label for="payment-phone" style="display: block; font-weight: 600; margin-bottom: 8px;">
                     Numéro de téléphone pour le paiement *
                 </label>
@@ -286,8 +287,8 @@
                     type="tel"
                     placeholder="+237690088572"
                     value="+237"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                <small style="display: block; margin-top: 4px; color: #666;">
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+                <small style="display: block; margin-top: 4px; color: var(--muted);">
                     Entrez votre numéro MTN/Orange/Airtel pour initier le paiement
                 </small>
             </div>
@@ -295,7 +296,7 @@
             <div id="payment-msg" class="payment-msg" role="status" aria-live="polite"></div>
 
             <button class="primary sticky-cta" id="confirmBtn" onclick="confirmPayment()" disabled>
-                🔒 Confirmer et payer
+                {{ icon('lock', 18) }} Confirmer et payer
             </button>
 
             <button class="secondary" onclick="skipPayment()">
@@ -378,7 +379,7 @@
 
             const restore = () => {
                 btn.disabled = false;
-                btn.textContent = '🔒 Confirmer et payer';
+                btn.textContent = 'Confirmer et payer';
             };
 
             btn.disabled = true;

@@ -14,11 +14,11 @@
           <div class="muted small">Destinataire</div>
           <div class="strong">{{ shop.name }}{% if shop.whatsapp_number %} · {{ shop.whatsapp_number }}{% endif %}</div>
         </div>
-        <div class="pm-ic pm-cod" style="width:38px;height:38px">💬</div>
+        <div class="pm-ic pm-cod" style="width:38px;height:38px">{{ icon('message', 18) }}</div>
       </div>
     </div>
 
-    <a id="wa-link" class="btn wa block" href="{{ whatsapp_link }}" target="_blank" rel="noopener">💬 Ouvrir WhatsApp</a>
+    <a id="wa-link" class="btn wa block" href="{{ whatsapp_link }}" target="_blank" rel="noopener">{{ icon('message', 18) }} Ouvrir WhatsApp</a>
     <div id="wa-hint" class="muted small" style="margin-top:8px"></div>
     {% if payment_instructions %}<div class="flash info mt">{{ payment_instructions }}</div>{% endif %}
     <a class="btn outline block mt" href="/s/{{ shop.slug }}/suivi/{{ order.reference }}">Voir ma commande</a>

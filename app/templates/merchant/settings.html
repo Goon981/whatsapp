@@ -3,7 +3,7 @@
 {% block heading %}Réglages{% endblock %}
 {% block subheading %}Configuration de la boutique{% endblock %}
 {% block content %}
-  <a href="/app/profile" class="muted small" style="display:inline-block;margin:0 2px 8px">← Profil</a>
+  <a href="/app/profile" class="muted small" style="display:inline-block;margin:0 2px 8px">{{ icon('arrow-left', 18) }} Profil</a>
   <form method="post" action="/app/settings">
     <div class="card">
       <h3>Identité</h3>

@@ -53,24 +53,24 @@
     border-radius: var(--radius-sm);
     font-size: 14px;
     font-weight: 600;
-    background: #e8f5e9;
-    border: 1px solid #4caf50;
-    color: #2e7d32;
+    background: var(--brand-050);
+    border: 1px solid var(--brand);
+    color: var(--brand-600);
   }
 
   .form-notice.err {
-    background: #fdecea;
-    border-color: #e53935;
-    color: #b71c1c;
+    background: var(--red-bg);
+    border-color: var(--red-fg);
+    color: var(--red-fg);
   }
 </style>
 
 <div class="create-form">
   <!-- Section 1: Images -->
   <div class="form-section">
-    <h3>📸 Ajouter des photos</h3>
+    <h3>{{ icon('camera', 18) }} Ajouter des photos</h3>
     <div class="upload-zone" id="uploadZone">
-      <div class="upload-zone-icon">📸</div>
+      <div class="upload-zone-icon">{{ icon('camera', 18) }}</div>
       <div class="upload-zone-title">Sélectionnez vos photos</div>
       <div class="upload-zone-hint">JPG, PNG, GIF · Max 5MB chacun</div>
       <div class="upload-zone-help">Vous pouvez sélectionner 2, 3, 4 images ou plus à la fois</div>
@@ -84,7 +84,7 @@
 
   <!-- Section 2: Informations produit -->
   <form id="productForm" class="form-section">
-    <h3>📝 Informations du produit</h3>
+    <h3>{{ icon('edit', 18) }} Informations du produit</h3>
 
     <div class="form-group">
       <label for="name" class="required">Nom du produit</label>
@@ -120,7 +120,7 @@
 
     <!-- Section 3: Catégorie -->
     <div class="form-section">
-      <h3>📂 Catégorie</h3>
+      <h3>{{ icon('folder', 18) }} Catégorie</h3>
 
       <div class="form-group">
         <label for="category_id">Choisir une catégorie</label>
@@ -141,16 +141,16 @@
 
     <!-- Section 4: Variantes -->
     <div class="form-section">
-      <h3>🎨 Variantes (optionnel)</h3>
+      <h3>{{ icon('palette', 18) }} Variantes (optionnel)</h3>
       <div class="form-group">
         <label for="variants">Taille, couleur, etc.</label>
         <textarea id="variants" name="variants" placeholder="Taille M|2500|10&#10;Taille L|3000|5&#10;Taille XL|3500|3"></textarea>
-        <small style="color: #666; margin-top: 4px; display: block;">Format: Nom|Prix|Stock (une par ligne)</small>
+        <small style="color: var(--muted); margin-top: 4px; display: block;">Format: Nom|Prix|Stock (une par ligne)</small>
       </div>
     </div>
 
     <input type="hidden" name="image_url" id="image_url">
-    <button type="submit" class="btn-submit" id="submitBtn">✓ Créer le produit</button>
+    <button type="submit" class="btn-submit" id="submitBtn">{{ icon('check', 18) }} Créer le produit</button>
   </form>
 </div>
 
@@ -203,7 +203,7 @@
         thumb.className = 'image-thumb';
         thumb.innerHTML = `
           <img src="${e.target.result}" alt="Image">
-          <button type="button" class="image-thumb-remove">✕</button>
+          <button type="button" class="image-thumb-remove">&times;</button>
         `;
         const removeBtn = thumb.querySelector('.image-thumb-remove');
         removeBtn.onclick = (evt) => {
@@ -296,7 +296,7 @@ function createCategory() {
       select.appendChild(option);
       select.value = data.id;
       nameInput.value = '';
-      alert('✓ Catégorie créée: ' + data.name);
+      alert('Catégorie créée: ' + data.name);
     } else {
       alert('Erreur: ' + (data.detail || 'Impossible de créer la catégorie'));
     }

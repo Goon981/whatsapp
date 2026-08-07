@@ -9,11 +9,11 @@
     <input id="name" name="name" required placeholder="Chez Amina">
 
     <label for="logo">Logo de la boutique</label>
-    <div style="border: 2px dashed #ddd; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: #f9f9f9;" id="logo-drop-zone">
+    <div style="border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: var(--surface-2);" id="logo-drop-zone">
       <input id="logo" type="file" name="logo" accept="image/*" style="display: none;" onchange="showLogoPreview(this)">
       <div id="logo-placeholder">
-        <div style="font-size: 2rem; margin-bottom: 8px;">📸</div>
-        <p style="margin: 0; color: #666;">Cliquez ou glissez votre logo ici</p>
+        <div style="font-size: 2rem; margin-bottom: 8px;">{{ icon('camera', 18) }}</div>
+        <p style="margin: 0; color: var(--muted);">Cliquez ou glissez votre logo ici</p>
         <p class="hint">JPG, PNG, GIF ou WebP (max 5MB)</p>
       </div>
       <img id="logo-preview" style="max-width: 100%; max-height: 150px; display: none; margin-top: 10px;" />
@@ -74,16 +74,16 @@
     <label for="city">Ville</label>
     <input id="city" name="city" placeholder="Douala">
 
-    <hr style="margin: 24px 0; border: none; border-top: 1px solid #ddd;">
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border);">
     <h3 style="margin-bottom: 12px;">Couleur de la boutique</h3>
     <p class="hint">Choisissez votre couleur : les nuances et la couleur du texte
       sont calculées automatiquement pour rester lisibles.</p>
 
     <label for="theme_color">Couleur principale</label>
     <div style="display: flex; gap: 12px; align-items: center;">
-      <input id="theme_color" type="color" name="theme_color" value="#128C7E"
-             style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
-      <span id="theme_color_text" class="hint">#128C7E</span>
+      <input id="theme_color" type="color" name="theme_color" value="var(--brand-600)"
+             style="width: 60px; height: 40px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">
+      <span id="theme_color_text" class="hint">var(--brand-600)</span>
     </div>
 
     <div id="palette-suggestions" style="margin-top: 12px;">
@@ -91,11 +91,11 @@
       <div style="display:flex; gap:8px; flex-wrap:wrap;"></div>
     </div>
 
-    <div style="margin-top: 20px; padding: 16px; background: #f6f8f7; border-radius: 8px;">
+    <div style="margin-top: 20px; padding: 16px; background: var(--surface-2); border-radius: 8px;">
       <strong>Aperçu</strong>
-      <div id="theme-preview" style="margin-top: 12px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e5e5;">
+      <div id="theme-preview" style="margin-top: 12px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);">
         <div id="preview-bar" style="padding: 12px 14px; font-weight: 700;">Ma boutique</div>
-        <div style="background: #fff; padding: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div style="background: var(--surface); padding: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <button type="button" id="preview-btn" style="padding: 9px 16px; border: none; border-radius: 8px; font-weight: 600; cursor: default;">Commander</button>
           <span id="preview-tint" style="padding: 7px 12px; border-radius: 999px; font-weight: 600; font-size: 13px;">Catégorie</span>
         </div>

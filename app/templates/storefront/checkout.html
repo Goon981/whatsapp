@@ -62,14 +62,14 @@
       </label>{% endif %}
       {% if shop.accept_card %}
       <label class="pay-opt" id="opt-card" onclick="pickPay('card')">
-        <div class="pm-ic pm-card">💳</div>
+        <div class="pm-ic pm-card">{{ icon('credit-card', 18) }}</div>
         <div><div class="pm-t1">Carte bancaire</div><div class="pm-t2">Visa, Mastercard, etc.</div></div>
         <span class="radio"></span>
         <input type="radio" name="payment_method" value="card" class="hide">
       </label>{% endif %}
       {% if shop.accept_cash_on_delivery %}
       <label class="pay-opt" id="opt-cod" onclick="pickPay('cash_on_delivery')">
-        <div class="pm-ic pm-cod">💵</div>
+        <div class="pm-ic pm-cod">{{ icon('wallet', 22) }}</div>
         <div><div class="pm-t1">Paiement à la livraison</div><div class="pm-t2">Payez en espèces à la réception</div></div>
         <span class="radio"></span>
         <input type="radio" name="payment_method" value="cash_on_delivery" class="hide">
@@ -89,7 +89,7 @@
       </div>
     </div>
 
-    <button class="btn block" type="submit" id="submit-btn">🔒 Valider et envoyer sur WhatsApp</button>
+    <button class="btn block" type="submit" id="submit-btn">{{ icon('lock', 18) }} Valider et envoyer sur WhatsApp</button>
     <p class="hint center mt">Paiement 100% sécurisé · total recalculé par le serveur.</p>
   </form>
 {% endblock %}

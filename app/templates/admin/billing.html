@@ -12,7 +12,7 @@
   </div>
 
   <div class="flash info">
-    ⚙️ Suspension automatique active : toute boutique dont l'échéance est dépassée (au-delà du délai de grâce)
+    {{ icon('settings', 18) }} Suspension automatique active : toute boutique dont l'échéance est dépassée (au-delà du délai de grâce)
     est désactivée automatiquement. Marquez un paiement pour la réactiver instantanément.
   </div>
 
@@ -45,7 +45,7 @@
           <td><span class="badge {{ r.state.css }}">{{ r.state.label }}</span></td>
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <form method="post" action="/admin/billing/{{ r.shop.id }}/mark-paid"><button class="btn sm" type="submit">✔ Marquer payé (+1 mois)</button></form>
+              <form method="post" action="/admin/billing/{{ r.shop.id }}/mark-paid"><button class="btn sm" type="submit">{{ icon('check', 18) }} Marquer payé (+1 mois)</button></form>
               {% if r.shop.status.value == 'suspended' %}
                 <form method="post" action="/admin/shops/{{ r.shop.id }}/activate"><button class="btn sm secondary" type="submit">Réactiver</button></form>
               {% else %}

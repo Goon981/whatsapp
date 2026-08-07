@@ -24,7 +24,7 @@
     {% for p in products %}
     <div class="product">
       <a class="thumb" href="/s/{{ shop.slug }}/p/{{ p.id }}">
-        {% if p.images %}<img src="{{ p.images[0].image_url }}" alt="{{ p.name }}">{% elif p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}">{% else %}🛒{% endif %}
+        {% if p.images %}<img src="{{ p.images[0].image_url }}" alt="{{ p.name }}" loading="lazy" decoding="async">{% elif p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}" loading="lazy" decoding="async">{% else %}<span class="ph">{{ icon('bag', 40) }}</span>{% endif %}
       </a>
       <div class="body">
         <a class="name" href="/s/{{ shop.slug }}/p/{{ p.id }}" style="color:inherit">{{ p.name }}</a>
@@ -36,12 +36,12 @@
           <span class="badge red">Rupture</span>
         {% elif p.variants %}
           <a class="order-btn" href="/s/{{ shop.slug }}/p/{{ p.id }}">
-            <svg class="wa-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.4 5 5.1-1.3A10 10 0 1 0 12 2Z" opacity=".2"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M8 10c1 4 3 5 6 6l1.5-1.5 2 .8c-.3 2-2.3 2.4-4 2-4-1-6.5-3.5-7.5-7.5-.4-1.7 0-3.7 2-4l.8 2Z"/></svg>
+            {{ icon('whatsapp', 16, 'wa-ic') }}
             Commander
           </a>
         {% else %}
           <button class="order-btn" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ p.effective_price }}" data-image="{{ p.image_url or '' }}" onclick="quickAdd(parseInt(this.dataset.id), this.dataset.name, parseInt(this.dataset.price), this.dataset.image)">
-            <svg class="wa-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.4 5 5.1-1.3A10 10 0 1 0 12 2Z" opacity=".2"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M8 10c1 4 3 5 6 6l1.5-1.5 2 .8c-.3 2-2.3 2.4-4 2-4-1-6.5-3.5-7.5-7.5-.4-1.7 0-3.7 2-4l.8 2Z"/></svg>
+            {{ icon('whatsapp', 16, 'wa-ic') }}
             Commander
           </button>
         {% endif %}
@@ -54,7 +54,7 @@
   <div class="cartbar hide" id="cartbar">
     <div class="inner">
       <div class="grow"><strong id="cartbar-count">0</strong> article(s) · <strong id="cartbar-total">0 FCFA</strong></div>
-      <a href="/s/{{ shop.slug }}/panier">Voir le panier →</a>
+      <a href="/s/{{ shop.slug }}/panier">Voir le panier {{ icon('arrow-right', 18) }}</a>
     </div>
   </div>
 {% endblock %}

@@ -4,14 +4,14 @@
 {% block subheading %}Vérifiez vos articles{% endblock %}
 {% block content %}
   <div id="cart-empty" class="card center muted hide">
-    Votre panier est vide.<br><a href="/s/{{ shop.slug }}">Parcourir la boutique →</a>
+    Votre panier est vide.<br><a href="/s/{{ shop.slug }}">Parcourir la boutique {{ icon('arrow-right', 18) }}</a>
   </div>
   <div id="cart-items"></div>
 
   <div class="card summary hide" id="cart-summary">
     <div class="li"><span class="muted">Sous-total</span><strong id="sum-subtotal">0 FCFA</strong></div>
     <div class="hint">La livraison et le total final sont calculés à l'étape suivante par le serveur.</div>
-    <a class="btn block mt" href="/s/{{ shop.slug }}/commande">Passer la commande →</a>
+    <a class="btn block mt" href="/s/{{ shop.slug }}/commande">Passer la commande {{ icon('arrow-right', 18) }}</a>
   </div>
 {% endblock %}
 {% block scripts %}<script>renderCartPage();</script>{% endblock %}

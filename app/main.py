@@ -108,9 +108,14 @@ async def security_headers(request: Request, call_next):
     # Les pages HTML embarquent le JavaScript de l'application : sans en-tête de
     # cache, les navigateurs appliquent un cache heuristique et continuent de
     # servir l'ancienne version après un déploiement. On les marque donc comme
-    # non stockables (les fichiers de /static gardent leur cache normal).
+    # non stockables.
     if response.headers.get("content-type", "").startswith("text/html"):
         response.headers["Cache-Control"] = "no-store, must-revalidate"
+    elif request.url.path.startswith("/static/") and request.query_params.get("v"):
+        # Les gabarits demandent /static/…?v=<empreinte du contenu> : l'URL
+        # change dès que le fichier change, le cache peut donc être gardé un an
+        # sans revalidation. Sans le paramètre, on reste prudent.
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
 

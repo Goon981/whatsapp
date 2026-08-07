@@ -6,50 +6,50 @@
 {% block content %}
 <style>
     .edit-section {
-        background: #fff;
+        background: var(--surface);
         border-radius: 8px;
         padding: 20px;
         margin-bottom: 24px;
-        border: 1px solid #eee;
+        border: 1px solid var(--border);
     }
 
     .section-title {
         font-size: 18px;
         font-weight: 700;
         margin-bottom: 16px;
-        color: #25d366;
+        color: var(--brand-600);
     }
 
     .dropzone {
-        border: 2px dashed #25d366;
+        border: 2px dashed var(--brand);
         border-radius: 8px;
         padding: 40px 20px;
         text-align: center;
-        background: #f0f8f5;
+        background: var(--brand-050);
         cursor: pointer;
         transition: all 0.2s;
         margin-bottom: 20px;
     }
 
     .dropzone:hover {
-        background: #e8f5e9;
-        border-color: #128c4f;
+        background: var(--brand-050);
+        border-color: var(--brand-600);
     }
 
     .dropzone.dragover {
-        background: #e8f5e9;
-        border-color: #128c4f;
+        background: var(--brand-050);
+        border-color: var(--brand-600);
         transform: scale(1.02);
     }
 
     .dropzone-text {
-        color: #666;
+        color: var(--muted);
         font-size: 14px;
         margin-bottom: 8px;
     }
 
     .dropzone-hint {
-        color: #999;
+        color: var(--muted);
         font-size: 12px;
     }
 
@@ -65,8 +65,8 @@
         aspect-ratio: 1;
         border-radius: 8px;
         overflow: hidden;
-        border: 2px solid #eee;
-        background: #f5f5f5;
+        border: 2px solid var(--border);
+        background: var(--surface-2);
     }
 
     .image-item img {
@@ -76,8 +76,8 @@
     }
 
     .image-item.error {
-        border-color: #ff9800;
-        background: #fff3e0;
+        border-color: var(--amber-fg);
+        background: var(--amber-bg);
     }
 
     .image-error-placeholder {
@@ -86,14 +86,14 @@
         justify-content: center;
         width: 100%;
         height: 100%;
-        background: #ffebee;
-        color: #c62828;
+        background: var(--red-bg);
+        color: var(--red-fg);
         font-size: 36px;
     }
 
     .image-item.primary {
-        border-color: #25d366;
-        box-shadow: 0 0 0 2px #fff, 0 0 0 4px #25d366;
+        border-color: var(--brand-600);
+        box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--brand);
     }
 
     .image-item-actions {
@@ -116,7 +116,7 @@
     }
 
     .action-btn {
-        background: #25d366;
+        background: var(--brand);
         color: white;
         border: none;
         border-radius: 4px;
@@ -133,7 +133,7 @@
     }
 
     .action-btn.danger {
-        background: #dc3545;
+        background: var(--red-fg);
     }
 
     .action-btn:disabled {
@@ -143,11 +143,11 @@
 
     .upload-progress {
         display: none;
-        background: #f0f8f5;
+        background: var(--brand-050);
         border-radius: 8px;
         padding: 12px;
         margin-bottom: 12px;
-        border-left: 4px solid #25d366;
+        border-left: 4px solid var(--brand);
     }
 
     .upload-progress.show {
@@ -157,7 +157,7 @@
     .progress-bar {
         width: 100%;
         height: 4px;
-        background: #eee;
+        background: var(--border);
         border-radius: 2px;
         overflow: hidden;
         margin-top: 8px;
@@ -165,7 +165,7 @@
 
     .progress-fill {
         height: 100%;
-        background: #25d366;
+        background: var(--brand);
         width: 0%;
         transition: width 0.3s;
     }
@@ -174,7 +174,7 @@
         position: absolute;
         top: 4px;
         left: 4px;
-        background: #ff9800;
+        background: var(--amber-fg);
         color: white;
         font-size: 10px;
         padding: 2px 4px;
@@ -195,7 +195,7 @@
     input, textarea, select {
         width: 100%;
         padding: 10px;
-        border: 1px solid #ddd;
+        border: 1px solid var(--border);
         border-radius: 6px;
         font-family: inherit;
         font-size: 14px;
@@ -210,7 +210,7 @@
         display: block;
         font-weight: 600;
         margin-bottom: 6px;
-        color: #333;
+        color: var(--text);
     }
 
     .form-group {
@@ -218,7 +218,7 @@
     }
 
     .save-btn {
-        background: #25d366;
+        background: var(--brand);
         color: white;
         border: none;
         padding: 12px 24px;
@@ -242,19 +242,19 @@
     .empty-gallery {
         text-align: center;
         padding: 20px;
-        color: #999;
-        background: #f9f9f9;
+        color: var(--muted);
+        background: var(--surface-2);
         border-radius: 8px;
-        border: 1px dashed #ddd;
+        border: 1px dashed var(--border);
     }
 
     .info-box {
-        background: #e3f2fd;
-        border-left: 4px solid #2196f3;
+        background: var(--blue-bg);
+        border-left: 4px solid var(--blue-fg);
         padding: 12px;
         border-radius: 4px;
         font-size: 13px;
-        color: #0d47a1;
+        color: var(--blue-fg);
         margin-bottom: 16px;
     }
 </style>
@@ -302,20 +302,20 @@
         <textarea id="description" name="description">{{ product.description or '' }}</textarea>
     </div>
 
-    <button type="submit" class="save-btn">💾 Enregistrer les modifications</button>
+    <button type="submit" class="save-btn">{{ icon('save', 18) }} Enregistrer les modifications</button>
 </form>
 
 <!-- Galerie d'images -->
 <div class="edit-section">
-    <div class="section-title">🖼️ Galerie d'images</div>
+    <div class="section-title">{{ icon('image', 18) }} Galerie d'images</div>
 
     <div class="info-box">
-        💡 Uploadez plusieurs images pour créer une galerie. La première image marquée comme "primaire" sera utilisée dans le catalogue.
+        {{ icon('bulb', 18) }} Uploadez plusieurs images pour créer une galerie. La première image marquée comme "primaire" sera utilisée dans le catalogue.
     </div>
 
     <!-- Dropzone -->
     <div class="dropzone" id="dropzone">
-        <div class="dropzone-text">📸 Déposez vos images ici</div>
+        <div class="dropzone-text">{{ icon('camera', 18) }} Déposez vos images ici</div>
         <div class="dropzone-hint">ou cliquez pour sélectionner (JPG, PNG, max 5MB)</div>
         <input type="file" id="imageInput" multiple accept="image/*" style="display:none">
     </div>
@@ -338,15 +338,15 @@
                     <img src="{{ img.image_url }}" alt="{{ img.alt_text or 'Produit' }}" onload="handleImageLoad(this)" onerror="handleImageError(this, {{ img.id }})">
                     <div class="image-item-actions">
                         {% if not img.is_primary %}
-                        <button type="button" class="action-btn" onclick="setPrimary({{ img.id }})">⭐ Principale</button>
+                        <button type="button" class="action-btn" onclick="setPrimary({{ img.id }})">{{ icon('star', 18) }} Principale</button>
                         {% endif %}
-                        <button type="button" class="action-btn danger" onclick="deleteImage({{ img.id }})">🗑️ Supprimer</button>
+                        <button type="button" class="action-btn danger" onclick="deleteImage({{ img.id }})">{{ icon('trash', 18) }} Supprimer</button>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="empty-gallery">📷 Aucune image encore</div>
+            <div class="empty-gallery">{{ icon('camera', 18) }} Aucune image encore</div>
         {% endif %}
     </div>
 </div>
@@ -438,7 +438,7 @@
                     addImageToGallery(data);
                 })
                 .catch(err => {
-                    alert(`❌ Erreur upload ${file.name}: ${err.message}`);
+                    alert(`Erreur upload ${file.name}: ${err.message}`);
                     console.error(err);
                 });
         });
@@ -459,8 +459,8 @@
         div.innerHTML = `
             <img src="${imageData.image_url}" alt="${imageData.alt_text || 'Produit'}" onload="handleImageLoad(this)" onerror="handleImageError(this, ${imageData.id})">
             <div class="image-item-actions">
-                <button type="button" class="action-btn" onclick="setPrimary(${imageData.id})">⭐ Principale</button>
-                <button type="button" class="action-btn danger" onclick="deleteImage(${imageData.id})">🗑️ Supprimer</button>
+                <button type="button" class="action-btn" onclick="setPrimary(${imageData.id})">{{ icon('star', 15) }} Principale</button>
+                <button type="button" class="action-btn danger" onclick="deleteImage(${imageData.id})">{{ icon('trash', 15) }} Supprimer</button>
             </div>
         `;
         gallery.appendChild(div);
@@ -484,7 +484,7 @@
             img.style.display = 'none';
             const placeholder = document.createElement('div');
             placeholder.className = 'image-error-placeholder';
-            placeholder.innerHTML = '⚠️';
+            placeholder.innerHTML = '';
             placeholder.style.cursor = 'pointer';
             placeholder.onclick = () => retryLoadImage(img, imageId);
             container.insertBefore(placeholder, img.nextSibling);
@@ -534,9 +534,9 @@
             // Update button
             item.querySelector('.action-btn').style.display = 'none';
 
-            alert('✓ Image définie comme principale');
+            alert('Image définie comme principale');
         } catch (err) {
-            alert('❌ Erreur: ' + err.message);
+            alert('Erreur: ' + err.message);
         }
     }
 
@@ -555,12 +555,12 @@
             // Show empty state if no more images
             const gallery = document.querySelector('.image-gallery');
             if (!gallery || gallery.children.length === 0) {
-                document.getElementById('imageGallery').innerHTML = '<div class="empty-gallery">📷 Aucune image encore</div>';
+                document.getElementById('imageGallery').innerHTML = `<div class="empty-gallery">{{ icon('camera', 18) }} Aucune image encore</div>`;
             }
 
-            alert('✓ Image supprimée');
+            alert('Image supprimée');
         } catch (err) {
-            alert('❌ Erreur: ' + err.message);
+            alert('Erreur: ' + err.message);
         }
     }
 </script>

@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ code }} · BAOBAY</title>
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+  {{ theme_style(shop if shop is defined else None)|safe }}
 </head>
 <body>
-  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">🛍️</div><h1>BAOBAY</h1></div></header>
+  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">{{ icon('bag', 18) }}</div><h1>BAOBAY</h1></div></header>
   <main class="container page">
     <div class="card center">
-      <div style="font-size:3rem">🤷</div>
+      <div style="font-size:3rem">{{ icon('help', 18) }}</div>
       <h1>{{ code }}</h1>
       <p class="muted">{{ message }}</p>
       <a class="btn block mt" href="/">Retour à l'accueil</a>

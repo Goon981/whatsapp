@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Espace commerçant{% endblock %} · BAOBAY</title>
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}">
   {% if shop %}{{ theme_style(shop)|safe }}{% endif %}
 </head>
 <body>
   {% block header %}
   <header class="topbar">
     <div class="container">
-      <div class="logo-badge">🧑‍💼</div>
+      <div class="logo-badge">{{ icon('store', 22) }}</div>
       <div class="grow">
         <h1>{% block heading %}{{ shop.name if shop else 'BAOBAY' }}{% endblock %}</h1>
         <div class="sub">{% block subheading %}Espace commerçant{% endblock %}</div>

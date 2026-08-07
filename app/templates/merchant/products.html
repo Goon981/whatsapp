@@ -23,12 +23,12 @@
   <div class="list">
     {% for p in products %}
     <div class="row-item">
-      <div class="th">{% if p.image_url %}<img src="{{ p.image_url }}" alt="">{% else %}📦{% endif %}</div>
+      <div class="th">{% if p.image_url %}<img src="{{ p.image_url }}" alt="" loading="lazy" decoding="async">{% else %}{{ icon('package', 18) }}{% endif %}</div>
       <div class="grow">
         <div class="t1">{{ p.name }}</div>
         <div class="t2">{{ p.effective_price|fcfa }} · Stock : {% if p.is_low_stock %}<span style="color:var(--amber-fg);font-weight:700">{{ p.stock }}</span>{% else %}{{ p.stock }}{% endif %}</div>
       </div>
-      <a href="/app/products/{{ p.id }}/edit" class="icon-btn" title="Éditer et galerie d'images">🖼️</a>
+      <a href="/app/products/{{ p.id }}/edit" class="icon-btn" title="Éditer et galerie d'images">{{ icon('image', 18) }}</a>
       <label class="switch" title="Visible en boutique">
         <input type="checkbox" {% if p.status.value != 'hidden' %}checked{% endif %}
                onchange="document.getElementById('tg-{{ p.id }}').submit()">

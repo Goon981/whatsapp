@@ -92,13 +92,26 @@ def _owned_category_id(db: Session, shop: models.Shop, raw: str) -> int | None:
 
 
 def _check_subscription_active(shop: models.Shop) -> bool:
-    """Vérifie si la boutique a un abonnement actif (trial ou payant)"""
-    try:
-        if not shop.trial_expires_at:
-            return False
-        return models.as_utc(shop.trial_expires_at) > utcnow()
-    except Exception:
-        return True  # Par défaut, laisser accès
+    """La boutique a-t-elle un accès valide : abonnement payé ou essai en cours ?
+
+    Seul l'essai était consulté. Un commerçant qui venait de payer restait donc
+    renvoyé vers la page d'abonnement dès son essai expiré, sans moyen d'entrer
+    dans son tableau de bord — et une boutique sans date d'essai (créée sans
+    période d'essai) était bloquée d'emblée.
+    """
+    now = utcnow()
+
+    sub = shop.subscription
+    if sub is not None and sub.current_period_end is not None:
+        if models.as_utc(sub.current_period_end) > now:
+            return True
+
+    if shop.trial_expires_at is not None:
+        return models.as_utc(shop.trial_expires_at) > now
+
+    # Ni abonnement ni essai enregistré : ne pas enfermer le commerçant dehors,
+    # la suspension pour impayé est décidée par services/billing.enforce_all.
+    return sub is None
 
 
 def _set_session(response: RedirectResponse, user: models.User) -> None:

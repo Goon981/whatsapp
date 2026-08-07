@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Connexion · BAOBAY</title>
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+  {{ theme_style(shop if shop is defined else None)|safe }}
 </head>
 <body>
-  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">🛍️</div><h1>BAOBAY</h1></div></header>
+  <header class="topbar"><div class="container"><div class="logo" style="display:flex;align-items:center;justify-content:center">{{ icon('bag', 18) }}</div><h1>BAOBAY</h1></div></header>
   <main class="container page">
     <h1 class="page-title">{{ title or 'Connexion commerçant' }}</h1>
     {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
@@ -16,7 +17,7 @@
       <form method="post" action="/app/register" id="registerForm">
         <label for="full_name">Nom complet *</label>
         <input id="full_name" name="full_name" required placeholder="Prénom Nom" onchange="validateFullName()">
-        <div id="fullNameError" style="color:#dc3545;font-size:12px;margin-top:4px;display:none;"></div>
+        <div id="fullNameError" style="color:var(--red-fg);font-size:12px;margin-top:4px;display:none;"></div>
         <label for="email">E-mail</label>
         <input id="email" name="email" type="email" placeholder="vous@exemple.com">
         <label for="phone">Téléphone</label>
@@ -33,7 +34,7 @@
           const words = fullName.split(/\s+/).filter(w => w.length > 0);
 
           if (words.length < 2) {
-            errorDiv.textContent = '⚠️ Veuillez entrer votre prénom et nom';
+            errorDiv.textContent = 'Veuillez entrer votre prénom et nom';
             errorDiv.style.display = 'block';
             return false;
           } else {
@@ -45,7 +46,7 @@
         document.getElementById('registerForm').addEventListener('submit', function(e) {
           if (!validateFullName()) {
             e.preventDefault();
-            alert('⚠️ Veuillez entrer votre nom complet (prénom + nom)');
+            alert('Veuillez entrer votre nom complet (prénom + nom)');
           }
         });
 
@@ -64,7 +65,7 @@
       <p class="center mt muted">Nouveau ? <a href="/app/register">Créer une boutique</a></p>
       {% endif %}
     </div>
-    <p class="center muted"><a href="/">← Accueil</a></p>
+    <p class="center muted"><a href="/">{{ icon('arrow-left', 18) }} Accueil</a></p>
   </main>
 </body>
 </html>

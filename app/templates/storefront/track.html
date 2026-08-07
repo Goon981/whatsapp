@@ -16,6 +16,6 @@
     {% endfor %}
     </div>
   </div>
-  <a href="/s/{{ shop.slug }}" class="btn secondary block">← Retour à la boutique</a>
+  <a href="/s/{{ shop.slug }}" class="btn secondary block">{{ icon('arrow-left', 18) }} Retour à la boutique</a>
 {% endblock %}
 {% block scripts %}<script>document.getElementById('cart-count').textContent = (JSON.parse(localStorage.getItem('smartshop_cart_'+window.SHOP_SLUG)||'[]')).reduce((s,i)=>s+i.quantity,0);</script>{% endblock %}
