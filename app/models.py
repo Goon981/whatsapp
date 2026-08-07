@@ -30,6 +30,18 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def as_utc(value: datetime | None) -> datetime | None:
+    """Rend un datetime comparable à ``utcnow()``.
+
+    Les colonnes ``DateTime`` ne portent pas de fuseau : ce qui est écrit avec
+    ``utcnow()`` (aware) revient naïf après relecture. Comparer les deux lève
+    ``TypeError``. On considère donc tout datetime naïf comme étant en UTC.
+    """
+    if value is None or value.tzinfo is not None:
+        return value
+    return value.replace(tzinfo=timezone.utc)
+
+
 # --------------------------------------------------------------------------- #
 # Énumérations métier
 # --------------------------------------------------------------------------- #

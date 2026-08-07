@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import logging
 
 from app.database import get_db
-from app.models import Shop, Subscription, SubscriptionPlan, SubscriptionStatus, ShopStatus, utcnow
+from app.models import Shop, Subscription, SubscriptionPlan, SubscriptionStatus, ShopStatus, as_utc, utcnow
 from app.deps import require_shop_access
 from app.config import settings
 
@@ -90,7 +90,7 @@ async def get_subscription_status(
 
     # Vérifier le trial
     if shop.trial_expires_at:
-        days_remaining = (shop.trial_expires_at - now).days
+        days_remaining = (as_utc(shop.trial_expires_at) - now).days
         if days_remaining > 0:
             return {
                 "status": "trial",
@@ -118,8 +118,8 @@ async def get_subscription_status(
             "support": SUPPORT_NUMBER
         }
 
-    if sub.current_period_end and sub.current_period_end > now:
-        days_remaining = (sub.current_period_end - now).days
+    if sub.current_period_end and as_utc(sub.current_period_end) > now:
+        days_remaining = (as_utc(sub.current_period_end) - now).days
         return {
             "status": "active",
             "plan": str(sub.plan),
@@ -152,7 +152,7 @@ async def check_expiry_and_notify(db: Session = Depends(get_db)):
     for shop in shops:
         # Vérifier trial
         if shop.trial_expires_at:
-            days_left = (shop.trial_expires_at - now).days
+            days_left = (as_utc(shop.trial_expires_at) - now).days
 
             # Notification 3 jours avant expiration du trial
             if days_left == 3:
@@ -169,7 +169,7 @@ async def check_expiry_and_notify(db: Session = Depends(get_db)):
         # Vérifier subscription
         sub = shop.subscription
         if sub and sub.current_period_end:
-            days_left = (sub.current_period_end - now).days
+            days_left = (as_utc(sub.current_period_end) - now).days
 
             # Notification 3 jours avant expiration de l'abonnement
             if days_left == 3:

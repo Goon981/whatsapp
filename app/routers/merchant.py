@@ -72,7 +72,7 @@ def _check_subscription_active(shop: models.Shop) -> bool:
     try:
         if not shop.trial_expires_at:
             return False
-        return shop.trial_expires_at > utcnow()
+        return models.as_utc(shop.trial_expires_at) > utcnow()
     except Exception:
         return True  # Par défaut, laisser accès
 
@@ -318,7 +318,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     days_left = 0
     try:
         if shop.trial_expires_at:
-            days_left = (shop.trial_expires_at - now).days
+            days_left = (models.as_utc(shop.trial_expires_at) - now).days
             if days_left < 0:
                 trial_status = "EXPIRED"
             elif days_left == 0:

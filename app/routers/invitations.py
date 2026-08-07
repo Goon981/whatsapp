@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Shop, User, utcnow
+from app.models import Shop, User, as_utc, utcnow
 from app.deps import require_superadmin
 
 router = APIRouter(prefix="/api/invitations", tags=["invitations"])
@@ -172,7 +172,7 @@ async def get_trial_status(
         return {"status": "no_trial", "message": "Pas de trial actif"}
 
     now = utcnow()
-    days_remaining = (shop.trial_expires_at - now).days
+    days_remaining = (as_utc(shop.trial_expires_at) - now).days
 
     if days_remaining < 0:
         return {
