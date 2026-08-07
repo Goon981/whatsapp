@@ -24,6 +24,7 @@ from ..services import charts
 from ..services import orders as orders_service
 from ..services import stats as stats_service
 from ..services.orders import OrderError
+from ..services.theme import build_palette
 from ..services.whatsapp import build_wa_link
 from ..templating import templates
 from ..utils import unique_shop_slug
@@ -211,8 +212,6 @@ def onboarding_submit(
     sector_other: str = Form(""),
     city: str = Form(""),
     theme_color: str = Form("#128C7E"),
-    secondary_color: str = Form("#E8F5F1"),
-    text_color: str = Form("#333333"),
     logo: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
@@ -243,11 +242,17 @@ def onboarding_submit(
         except Exception:
             pass
 
+    # Les nuances découlent de la couleur principale : les laisser au choix
+    # produisait des combinaisons illisibles (texte blanc sur fond blanc).
+    palette = build_palette(theme_color)
+
     shop = models.Shop(
         owner_id=user.id, name=name, slug=unique_shop_slug(db, name), sector=sector,
         whatsapp_number=whatsapp_number, contact_phone=whatsapp_number, city=city or None,
         status=models.ShopStatus.ACTIVE,
-        theme_color=theme_color, secondary_color=secondary_color, text_color=text_color,
+        theme_color=palette["brand"],
+        secondary_color=palette["brand-050"],
+        text_color=palette["on-brand"],
         logo_url=logo_url,
         trial_expires_at=utcnow() + timedelta(days=14),
     )
@@ -262,7 +267,9 @@ def onboarding_submit(
         status=models.SubscriptionStatus.TRIALING, current_period_end=utcnow() + timedelta(days=14),
     ))
     db.commit()
-    return _redirect("/app/dashboard")
+    # La boutique existe : la page de paiement peut présenter les formules
+    # (« Continuer sans payer » mène au tableau de bord pendant l'essai).
+    return _redirect("/app/payment")
 
 
 # --------------------------------------------------------------------------- #
@@ -857,7 +864,11 @@ async def settings_submit(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     shop.name = (form.get("name") or shop.name).strip()
     shop.description = (form.get("description") or "").strip() or None
-    shop.theme_color = form.get("theme_color") or shop.theme_color
+    # Même dérivation qu'à la création : les nuances suivent la couleur choisie.
+    settings_palette = build_palette(form.get("theme_color") or shop.theme_color)
+    shop.theme_color = settings_palette["brand"]
+    shop.secondary_color = settings_palette["brand-050"]
+    shop.text_color = settings_palette["on-brand"]
     shop.logo_url = (form.get("logo_url") or "").strip() or None
     shop.whatsapp_number = (form.get("whatsapp_number") or "").strip() or None
     shop.contact_phone = (form.get("contact_phone") or "").strip() or None

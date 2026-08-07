@@ -60,7 +60,7 @@ h1, h2, h3 { margin: 0 0 .4em; }
 
 /* ---------- Barres d'en-tête ---------- */
 .topbar {
-  background: var(--brand); color: #fff; padding: 16px 0 18px;
+  background: var(--brand); color: var(--on-brand); padding: 16px 0 18px;
   position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow);
 }
 .topbar.plain { background: var(--surface); color: var(--text); box-shadow: 0 1px 0 var(--border); }
@@ -77,8 +77,8 @@ h1, h2, h3 { margin: 0 0 .4em; }
 }
 .icon-btn {
   position: relative; width: 40px; height: 40px; border-radius: 12px;
-  display: inline-flex; align-items: center; justify-content: center; color: #fff;
-  background: rgba(255,255,255,.15); border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; color: var(--on-brand);
+  background: color-mix(in srgb, var(--on-brand) 15%, transparent); border: none; cursor: pointer;
 }
 .icon-btn .count {
   position: absolute; top: -4px; right: -4px; background: #fff; color: var(--brand-700);
@@ -93,9 +93,9 @@ h1, h2, h3 { margin: 0 0 .4em; }
 .greet .name { font-size: 1.35rem; font-weight: 800; line-height: 1.15; }
 .greet .tag { font-size: .78rem; opacity: .85; }
 .avatar {
-  width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.2);
+  width: 46px; height: 46px; border-radius: 50%; background: color-mix(in srgb, var(--on-brand) 20%, transparent);
   display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
-  color: #fff; flex: none; overflow: hidden; object-fit: cover;
+  color: var(--on-brand); flex: none; overflow: hidden; object-fit: cover;
 }
 
 /* ---------- Cartes ---------- */
@@ -110,7 +110,7 @@ h1, h2, h3 { margin: 0 0 .4em; }
 
 /* Revenue hero (dashboard + stats) */
 .revenue {
-  background: var(--brand); color: #fff; border-radius: var(--radius); padding: 18px;
+  background: var(--brand); color: var(--on-brand); border-radius: var(--radius); padding: 18px;
   box-shadow: var(--shadow-lg); margin-bottom: 14px; position: relative; overflow: hidden;
 }
 .revenue .k { font-size: .85rem; opacity: .9; }
@@ -133,7 +133,7 @@ h1, h2, h3 { margin: 0 0 .4em; }
 /* ---------- Boutons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--brand); color: #fff; border: none; padding: 14px 18px; border-radius: 14px;
+  background: var(--brand); color: var(--on-brand); border: none; padding: 14px 18px; border-radius: 14px;
   font-size: 1rem; font-weight: 700; cursor: pointer; min-height: 50px; text-align: center;
   transition: filter .15s ease, transform .05s ease; font-family: inherit;
 }
@@ -197,7 +197,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
   padding: 8px 15px; border-radius: 999px; background: #fff; color: var(--brand-700);
   border: 1.5px solid var(--border); font-size: .85rem; font-weight: 600; white-space: nowrap; cursor: pointer;
 }
-.pills a.active, .pills button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.pills a.active, .pills button.active { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
 
 /* ---------- Badges ---------- */
 .badge { display: inline-block; padding: 4px 11px; border-radius: 999px; font-size: .74rem; font-weight: 700; }
@@ -206,7 +206,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .badge.green { background: var(--green-bg); color: var(--green-fg); }
 .badge.red { background: var(--red-bg); color: var(--red-fg); }
 .badge.gray { background: var(--gray-bg); color: var(--gray-fg); }
-.badge.pro { background: rgba(255,255,255,.22); color: #fff; }
+.badge.pro { background: color-mix(in srgb, var(--on-brand) 22%, transparent); color: var(--on-brand); }
 
 /* ---------- Grille catalogue ---------- */
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -219,7 +219,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .product .price { font-weight: 700; color: var(--text); font-size: .8rem; margin-top: 2px; }
 .product .price small { font-size: .65rem; }
 .product .old { text-decoration: line-through; color: var(--muted); font-size: .6rem; font-weight: 500; margin-left: 3px; }
-.product .order-btn { display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--brand); color: #fff; border: none; border-radius: 9px; padding: 7px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; transition: filter .15s ease, transform .05s ease; font-family: inherit; white-space: nowrap; min-height: 32px; }
+.product .order-btn { display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--brand); color: var(--on-brand); border: none; border-radius: 9px; padding: 7px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; transition: filter .15s ease, transform .05s ease; font-family: inherit; white-space: nowrap; min-height: 32px; }
 .product .order-btn:hover { filter: brightness(1.06); }
 .product .order-btn:active { transform: scale(.98); }
 .product .order-btn .wa-ic { width: 14px; height: 14px; flex-shrink: 0; }
@@ -252,7 +252,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 /* Size / option chips */
 .chips { display: flex; gap: 10px; flex-wrap: wrap; }
 .chip-opt { min-width: 52px; text-align: center; padding: 11px 14px; border-radius: 12px; border: 1.5px solid var(--border); background: #fff; font-weight: 700; cursor: pointer; }
-.chip-opt.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.chip-opt.active { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
 
 /* ---------- Cartes de paiement (radio) ---------- */
 .pay-opt { display: flex; align-items: center; gap: 13px; border: 1.5px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; cursor: pointer; background: #fff; }
@@ -282,8 +282,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 
 /* ---------- Barre panier flottante ---------- */
 .cartbar { position: fixed; bottom: 76px; left: 0; right: 0; z-index: 25; padding: 0 16px; }
-.cartbar .inner { max-width: var(--maxw); margin: 0 auto; background: var(--brand-700); color: #fff; border-radius: 15px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-lg); }
-.cartbar a { color: #fff; font-weight: 800; }
+.cartbar .inner { max-width: var(--maxw); margin: 0 auto; background: var(--brand-700); color: var(--on-brand); border-radius: 15px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-lg); }
+.cartbar a { color: var(--on-brand); font-weight: 800; }
 
 /* ---------- Navigation basse ---------- */
 .tabnav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 30; box-shadow: 0 -2px 14px rgba(0,0,0,.05); }

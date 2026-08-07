@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 from .config import settings
 from .services.pricing import format_fcfa
+from .services.theme import theme_style
 
 templates = Jinja2Templates(directory=str(settings.TEMPLATES_DIR))
 
@@ -18,3 +19,5 @@ def format_fcfa_short(amount: int) -> str:
 templates.env.filters["fcfa"] = format_fcfa
 templates.env.filters["fcfa_short"] = format_fcfa_short
 templates.env.globals["app_name"] = settings.APP_NAME
+# Palette de boutique : dérive toutes les nuances de la couleur choisie.
+templates.env.globals["theme_style"] = theme_style

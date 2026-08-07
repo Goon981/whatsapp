@@ -43,6 +43,26 @@
   .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .required::after { content: " *"; color: var(--red-fg); }
+
+  .image-count { margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--brand); }
+
+  .form-notice {
+    display: none;
+    margin: 12px 0;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    background: #e8f5e9;
+    border: 1px solid #4caf50;
+    color: #2e7d32;
+  }
+
+  .form-notice.err {
+    background: #fdecea;
+    border-color: #e53935;
+    color: #b71c1c;
+  }
 </style>
 
 <div class="create-form">
@@ -56,8 +76,11 @@
       <div class="upload-zone-help">Vous pouvez sélectionner 2, 3, 4 images ou plus à la fois</div>
       <input type="file" id="fileInput" multiple="multiple" accept="image/*" style="display:none">
     </div>
+    <div class="image-count" id="imageCount"></div>
     <div class="image-gallery" id="imageGallery"></div>
   </div>
+
+  <div class="form-notice" id="formNotice"></div>
 
   <!-- Section 2: Informations produit -->
   <form id="productForm" class="form-section">
@@ -137,6 +160,8 @@
   const fileInput = document.getElementById('fileInput');
   const gallery = document.getElementById('imageGallery');
   const form = document.getElementById('productForm');
+  const countEl = document.getElementById('imageCount');
+  const noticeEl = document.getElementById('formNotice');
   let selectedFiles = [];
 
   // Upload zone events
@@ -154,12 +179,22 @@
 
   fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
+  const MAX_SIZE = 5 * 1024 * 1024;
+
+  function sameFile(a, b) {
+    return a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
+  }
+
   function handleFiles(files) {
-    selectedFiles = [];
-    gallery.innerHTML = '';
+    // Les fichiers s'ajoutent à la sélection : un second passage ne renvoie que
+    // les nouveaux fichiers, repartir de zéro effacerait les précédents.
+    const rejected = [];
 
     Array.from(files).forEach(file => {
       if (!file.type.startsWith('image/')) return;
+      if (file.size > MAX_SIZE) { rejected.push(file.name); return; }
+      if (selectedFiles.some(f => sameFile(f, file))) return;
+
       selectedFiles.push(file);
 
       const reader = new FileReader();
@@ -174,32 +209,64 @@
         removeBtn.onclick = (evt) => {
           evt.preventDefault();
           thumb.remove();
-          selectedFiles = selectedFiles.filter(f => f !== file);
+          selectedFiles = selectedFiles.filter(f => !sameFile(f, file));
+          updateCount();
         };
         gallery.appendChild(thumb);
       };
       reader.readAsDataURL(file);
     });
+
+    // Sans cette remise à zéro, resélectionner le même fichier ne déclenche
+    // pas l'événement « change » et l'ajout paraît sans effet.
+    fileInput.value = '';
+    updateCount();
+
+    if (rejected.length) {
+      showNotice('Trop volumineux (max 5 Mo) : ' + rejected.join(', '), true);
+    }
   }
 
-  // Form submission
-  form.addEventListener('submit', (e) => {
-    if (selectedFiles.length > 0) {
-      e.preventDefault();
-      const formData = new FormData(form);
-      selectedFiles.forEach(file => formData.append('files', file));
+  function updateCount() {
+    const n = selectedFiles.length;
+    countEl.textContent = n === 0
+      ? ''
+      : n + (n > 1 ? ' photos sélectionnées' : ' photo sélectionnée');
+  }
 
-      fetch('/app/products', {
-        method: 'POST',
-        body: formData
-      }).then(r => {
+  function showNotice(text, isError) {
+    noticeEl.textContent = text;
+    noticeEl.className = 'form-notice' + (isError ? ' err' : '');
+    noticeEl.style.display = text ? 'block' : 'none';
+  }
+
+  // Form submission — toujours envoyé en fetch. Sans preventDefault dans le cas
+  // « aucune image », le formulaire partait en GET et le produit n'était pas créé.
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const submitBtn = form.querySelector('.btn-submit') || document.getElementById('submit-btn');
+    const restore = () => {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Créer le produit'; }
+    };
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Création en cours…'; }
+    showNotice('');
+
+    const formData = new FormData(form);
+    selectedFiles.forEach(file => formData.append('files', file));
+
+    fetch('/app/products', { method: 'POST', body: formData, credentials: 'same-origin' })
+      .then(r => {
         if (r.ok || r.status === 302) {
           window.location.href = '/app/products';
-        } else {
-          alert('Erreur lors de la création du produit');
+          return;
         }
-      }).catch(err => alert('Erreur: ' + err.message));
-    }
+        return r.text().then(t => {
+          showNotice('Création impossible : ' + (t.slice(0, 200) || ('le serveur a répondu ' + r.status)), true);
+          restore();
+        });
+      })
+      .catch(err => { showNotice('Erreur réseau : ' + err.message, true); restore(); });
   });
 })();
 

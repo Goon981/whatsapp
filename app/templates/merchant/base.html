@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Espace commerçant{% endblock %} · BAOBAY</title>
   <link rel="stylesheet" href="/static/css/app.css">
-  {% if shop %}<style>:root{
-    --brand: {{ shop.theme_color }};
-    --brand-light: {{ shop.secondary_color }};
-    --text: {{ shop.text_color }};
-  }</style>{% endif %}
+  {% if shop %}{{ theme_style(shop)|safe }}{% endif %}
 </head>
 <body>
   {% block header %}

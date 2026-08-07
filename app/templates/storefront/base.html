@@ -6,11 +6,7 @@
   <title>{% block title %}{{ shop.name }}{% endblock %} · BAOBAY</title>
   <meta name="description" content="{{ shop.description or shop.name }}">
   <link rel="stylesheet" href="/static/css/app.css">
-  {% if shop %}<style>:root{
-    --brand: {{ shop.theme_color }};
-    --brand-light: {{ shop.secondary_color }};
-    --text: {{ shop.text_color }};
-  }</style>{% endif %}
+  {% if shop %}{{ theme_style(shop)|safe }}{% endif %}
 </head>
 <body>
   <header class="topbar">

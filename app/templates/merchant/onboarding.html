@@ -75,102 +75,114 @@
     <input id="city" name="city" placeholder="Douala">
 
     <hr style="margin: 24px 0; border: none; border-top: 1px solid #ddd;">
-    <h3 style="margin-bottom: 12px;">Personnalisation du thème</h3>
-    <p class="hint">Choisissez les couleurs de votre boutique pour la rendre unique</p>
-    <button type="button" style="background: #25d366; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-bottom: 16px; font-weight: 600;" onclick="autoPersonalizeColors()">✨ Personnaliser automatiquement</button>
+    <h3 style="margin-bottom: 12px;">Couleur de la boutique</h3>
+    <p class="hint">Choisissez votre couleur : les nuances et la couleur du texte
+      sont calculées automatiquement pour rester lisibles.</p>
 
     <label for="theme_color">Couleur principale</label>
     <div style="display: flex; gap: 12px; align-items: center;">
-      <input id="theme_color" type="color" name="theme_color" value="#128C7E" style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+      <input id="theme_color" type="color" name="theme_color" value="#128C7E"
+             style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
       <span id="theme_color_text" class="hint">#128C7E</span>
     </div>
 
-    <label for="secondary_color">Couleur secondaire</label>
-    <div style="display: flex; gap: 12px; align-items: center;">
-      <input id="secondary_color" type="color" name="secondary_color" value="#E8F5F1" style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
-      <span id="secondary_color_text" class="hint">#E8F5F1</span>
+    <div id="palette-suggestions" style="margin-top: 12px;">
+      <span class="hint" style="display:block; margin-bottom:6px;">Suggestions</span>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;"></div>
     </div>
 
-    <label for="text_color">Couleur du texte</label>
-    <div style="display: flex; gap: 12px; align-items: center;">
-      <input id="text_color" type="color" name="text_color" value="#333333" style="width: 60px; height: 40px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
-      <span id="text_color_text" class="hint">#333333</span>
-    </div>
-
-    <div style="margin-top: 20px; padding: 16px; background: var(--bg-light); border-radius: 8px; border-left: 4px solid var(--brand);">
-      <strong>Aperçu:</strong>
-      <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 4px;">
-        <button style="background: var(--brand); color: var(--text); padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Exemple bouton</button>
+    <div style="margin-top: 20px; padding: 16px; background: #f6f8f7; border-radius: 8px;">
+      <strong>Aperçu</strong>
+      <div id="theme-preview" style="margin-top: 12px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e5e5;">
+        <div id="preview-bar" style="padding: 12px 14px; font-weight: 700;">Ma boutique</div>
+        <div style="background: #fff; padding: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button type="button" id="preview-btn" style="padding: 9px 16px; border: none; border-radius: 8px; font-weight: 600; cursor: default;">Commander</button>
+          <span id="preview-tint" style="padding: 7px 12px; border-radius: 999px; font-weight: 600; font-size: 13px;">Catégorie</span>
+        </div>
       </div>
+      <div id="contrast-note" class="hint" style="margin-top: 8px;"></div>
     </div>
 
     <script>
-      var themeInput = document.getElementById('theme_color');
-      var secondaryInput = document.getElementById('secondary_color');
-      var textInput = document.getElementById('text_color');
+      // Aperçu client de la palette calculée côté serveur (app/services/theme.py).
+      // Les deux doivent rester cohérents : même formule de contraste WCAG.
+      (function () {
+        var DARK_INK = '#12211b', LIGHT_INK = '#ffffff';
+        var themeInput = document.getElementById('theme_color');
+        var label = document.getElementById('theme_color_text');
+        var bar = document.getElementById('preview-bar');
+        var btn = document.getElementById('preview-btn');
+        var tint = document.getElementById('preview-tint');
+        var note = document.getElementById('contrast-note');
 
-      function updateColors() {
-        document.documentElement.style.setProperty('--brand', themeInput.value);
-        document.documentElement.style.setProperty('--bg-light', secondaryInput.value);
-        document.documentElement.style.setProperty('--text', textInput.value);
-        document.getElementById('theme_color_text').textContent = themeInput.value.toUpperCase();
-        document.getElementById('secondary_color_text').textContent = secondaryInput.value.toUpperCase();
-        document.getElementById('text_color_text').textContent = textInput.value.toUpperCase();
-      }
+        function toRgb(hex) {
+          var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+          return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [22, 130, 76];
+        }
+        function toHex(rgb) {
+          return '#' + rgb.map(function (c) {
+            return Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, '0');
+          }).join('');
+        }
+        function mix(c, t, r) { return c.map(function (v, i) { return v + (t[i] - v) * r; }); }
+        function luminance(rgb) {
+          var ch = rgb.map(function (c) {
+            var s = c / 255;
+            return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+          });
+          return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+        }
+        function contrast(a, b) {
+          var la = luminance(toRgb(a)), lb = luminance(toRgb(b));
+          return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+        }
+        function readableInk(bg) {
+          return contrast(bg, LIGHT_INK) >= contrast(bg, DARK_INK) ? LIGHT_INK : DARK_INK;
+        }
 
-      function hexToRgb(hex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : null;
-      }
+        function palette(hex) {
+          var base = toRgb(hex);
+          var ink = readableInk(toHex(base));
+          var toward = ink === LIGHT_INK ? [0, 0, 0] : [255, 255, 255];
+          for (var i = 0; i < 20 && contrast(toHex(base), ink) < 4.5; i++) {
+            base = mix(base, toward, 0.06);
+          }
+          var brand = toHex(base);
+          var dark = toHex(mix(base, [0, 0, 0], 0.30));
+          var light = toHex(mix(base, [255, 255, 255], 0.90));
+          if (contrast(light, dark) < 4.5) dark = DARK_INK;
+          return { brand: brand, ink: ink, dark: dark, light: light };
+        }
 
-      function rgbToHex(r, g, b) {
-        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-      }
+        function update() {
+          var p = palette(themeInput.value);
+          label.textContent = themeInput.value.toUpperCase();
+          bar.style.background = p.brand;
+          bar.style.color = p.ink;
+          btn.style.background = p.brand;
+          btn.style.color = p.ink;
+          tint.style.background = p.light;
+          tint.style.color = p.dark;
+          note.textContent = p.brand.toLowerCase() === themeInput.value.toLowerCase()
+            ? 'Contraste conforme : ' + contrast(p.brand, p.ink).toFixed(1) + ':1'
+            : 'Teinte ajustée en ' + p.brand.toUpperCase() + ' pour garder le texte lisible.';
+        }
 
-      function getLuminance(hex) {
-        const rgb = hexToRgb(hex);
-        if (!rgb) return 0.5;
-        return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-      }
+        var suggestions = ['#128C7E', '#1E6FD9', '#C2185B', '#E65100', '#6A1B9A', '#00796B', '#B71C1C', '#37474F'];
+        var row = document.querySelector('#palette-suggestions div');
+        suggestions.forEach(function (hex) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.title = hex;
+          b.style.cssText = 'width:32px;height:32px;border-radius:50%;border:2px solid #fff;'
+            + 'box-shadow:0 0 0 1px #ccc;cursor:pointer;background:' + hex;
+          b.onclick = function () { themeInput.value = hex; update(); };
+          row.appendChild(b);
+        });
 
-      function getLightenedColor(hex, percent) {
-        const rgb = hexToRgb(hex);
-        if (!rgb) return hex;
-        const ratio = percent / 100;
-        return rgbToHex(
-          Math.round(rgb.r + (255 - rgb.r) * ratio),
-          Math.round(rgb.g + (255 - rgb.g) * ratio),
-          Math.round(rgb.b + (255 - rgb.b) * ratio)
-        );
-      }
-
-      function autoPersonalizeColors() {
-        const mainColor = themeInput.value;
-
-        // Génère une couleur secondaire claire (version allégée)
-        const secondaryColor = getLightenedColor(mainColor, 85);
-
-        // Détermine la couleur du texte (noir ou blanc) basée sur la luminance
-        const luminance = getLuminance(mainColor);
-        const textColor = luminance > 0.5 ? "#000000" : "#FFFFFF";
-
-        // Met à jour les champs
-        themeInput.value = mainColor;
-        secondaryInput.value = secondaryColor;
-        textInput.value = textColor;
-
-        // Rafraîchit l'aperçu
-        updateColors();
-      }
-
-      themeInput.addEventListener('input', updateColors);
-      secondaryInput.addEventListener('input', updateColors);
-      textInput.addEventListener('input', updateColors);
-      updateColors();
+        themeInput.addEventListener('input', update);
+        update();
+      })();
     </script>
 
     <button class="btn block mt" type="submit">Publier ma boutique</button>

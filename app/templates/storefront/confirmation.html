@@ -10,12 +10,16 @@
 
     <div class="card tight" style="background:var(--brand-050);border:none;margin:14px 0">
       <div class="between">
-        <div class="left"><div class="muted small">Envoyé à</div><div class="strong">{{ order.customer_phone }}</div></div>
+        <div class="left">
+          <div class="muted small">Destinataire</div>
+          <div class="strong">{{ shop.name }}{% if shop.whatsapp_number %} · {{ shop.whatsapp_number }}{% endif %}</div>
+        </div>
         <div class="pm-ic pm-cod" style="width:38px;height:38px">💬</div>
       </div>
     </div>
 
-    <a class="btn wa block" href="{{ whatsapp_link }}" target="_blank" rel="noopener">💬 Ouvrir WhatsApp</a>
+    <a id="wa-link" class="btn wa block" href="{{ whatsapp_link }}" target="_blank" rel="noopener">💬 Ouvrir WhatsApp</a>
+    <div id="wa-hint" class="muted small" style="margin-top:8px"></div>
     {% if payment_instructions %}<div class="flash info mt">{{ payment_instructions }}</div>{% endif %}
     <a class="btn outline block mt" href="/s/{{ shop.slug }}/suivi/{{ order.reference }}">Voir ma commande</a>
     <a href="/s/{{ shop.slug }}" class="muted small" style="display:inline-block;margin-top:14px">Continuer mes achats</a>
@@ -31,5 +35,24 @@
     {% if order.delivery_fee %}<div class="li"><span class="muted">Livraison</span><span>{{ order.delivery_fee|fcfa }}</span></div>{% endif %}
     <div class="li total"><span>Total</span><span>{{ order.total|fcfa }}</span></div>
   </div>
-  <script>clearCart();</script>
+  <script>
+    clearCart();
+
+    // La commande n'atteint le commerçant que si WhatsApp est réellement ouvert :
+    // beaucoup de clients s'arrêtaient à cette page sans cliquer. On l'ouvre donc
+    // une seule fois par commande, le bouton restant disponible en secours.
+    (function () {
+      var key = 'wa-sent-{{ order.reference }}';
+      var hint = document.getElementById('wa-hint');
+      if (sessionStorage.getItem(key)) {
+        hint.textContent = "Si WhatsApp ne s'est pas ouvert, utilisez le bouton ci-dessus.";
+        return;
+      }
+      sessionStorage.setItem(key, '1');
+      hint.textContent = 'Ouverture de WhatsApp…';
+      setTimeout(function () {
+        window.location.href = document.getElementById('wa-link').href;
+      }, 800);
+    })();
+  </script>
 {% endblock %}
