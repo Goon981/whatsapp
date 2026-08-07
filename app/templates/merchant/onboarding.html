@@ -140,11 +140,11 @@
       function getLightenedColor(hex, percent) {
         const rgb = hexToRgb(hex);
         if (!rgb) return hex;
-        const factor = 1 + (percent / 100);
+        const ratio = percent / 100;
         return rgbToHex(
-          Math.min(255, Math.round(rgb.r * factor)),
-          Math.min(255, Math.round(rgb.g * factor)),
-          Math.min(255, Math.round(rgb.b * factor))
+          Math.round(rgb.r + (255 - rgb.r) * ratio),
+          Math.round(rgb.g + (255 - rgb.g) * ratio),
+          Math.round(rgb.b + (255 - rgb.b) * ratio)
         );
       }
 
