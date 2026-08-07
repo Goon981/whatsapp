@@ -59,12 +59,33 @@ app = FastAPI(
 )
 
 # --- CORS (pour frontend React) -------------------------------------------- #
+# Liste explicite d'origines : « * » combiné à ``allow_credentials`` conduit
+# Starlette à renvoyer l'origine de l'appelant dès qu'un cookie accompagne la
+# requête, si bien que n'importe quel site pouvait interroger l'API au nom d'un
+# commerçant connecté et lire ses commandes.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # À restreindre en production
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+    max_age=600,
+)
+
+# Le HTML de l'application embarque ses scripts et ses styles (dont la palette
+# de thème) : 'unsafe-inline' reste nécessaire, mais restreindre les sources à
+# 'self' empêche l'injection d'un script hébergé ailleurs.
+CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: https:; "
+    "font-src 'self' data:; "
+    "connect-src 'self'; "
+    "frame-ancestors 'self'; "
+    "form-action 'self'; "
+    "base-uri 'self'; "
+    "object-src 'none'"
 )
 
 
@@ -75,6 +96,15 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Content-Security-Policy", CSP)
+    response.headers.setdefault(
+        "Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()"
+    )
+    if settings.IS_PRODUCTION:
+        # Le site n'est servi qu'en HTTPS : interdire les retours en clair.
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
     # Les pages HTML embarquent le JavaScript de l'application : sans en-tête de
     # cache, les navigateurs appliquent un cache heuristique et continuent de
     # servir l'ancienne version après un déploiement. On les marque donc comme
@@ -204,7 +234,11 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return templates.TemplateResponse(
             request, "error.html", {"code": 404, "message": "Page introuvable."}, status_code=404
         )
-    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+    # ``exc.headers`` porte notamment le ``Retry-After`` des réponses 429 : le
+    # laisser tomber privait les clients de l'information la plus utile.
+    return JSONResponse(
+        {"detail": exc.detail}, status_code=exc.status_code, headers=getattr(exc, "headers", None)
+    )
 
 
 @app.exception_handler(RequestValidationError)

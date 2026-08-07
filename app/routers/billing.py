@@ -79,13 +79,15 @@ async def get_plans():
 @router.get("/status/{shop_id}")
 async def get_subscription_status(
     shop_id: int,
+    access=Depends(require_shop_access),
     db: Session = Depends(get_db)
 ):
-    """Vérifier l'état de l'abonnement."""
+    """Vérifier l'état de l'abonnement (réservé aux membres de la boutique).
 
-    shop = db.query(Shop).filter(Shop.id == shop_id).first()
-    if not shop:
-        raise HTTPException(status_code=404, detail="Boutique non trouvée")
+    Sans contrôle d'accès, parcourir les identifiants de boutique exposait la
+    formule, l'échéance et l'état de paiement de tous les commerçants.
+    """
+    shop, _ = access
 
     now = utcnow()
 
@@ -371,13 +373,16 @@ async def initiate_campay_payment(
     plan: str,
     phone: str,
     network: str = "MTN",
+    access=Depends(require_shop_access),
     db: Session = Depends(get_db)
 ):
-    """Initie un paiement via Campay (MTN, Orange, Airtel)."""
+    """Initie un paiement via Campay (MTN, Orange, Airtel).
 
-    shop = db.query(Shop).filter(Shop.id == shop_id).first()
-    if not shop:
-        raise HTTPException(status_code=404, detail="Boutique non trouvée")
+    Réservé aux membres de la boutique : ouverte à tous, cette route permettait
+    de déclencher une demande de paiement USSD sur n'importe quel numéro de
+    téléphone, autant de fois que voulu, aux frais du compte Campay.
+    """
+    shop, _ = access
 
     if plan not in PLAN_PRICES:
         raise HTTPException(status_code=400, detail="Plan invalide")

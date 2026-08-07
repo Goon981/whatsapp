@@ -14,10 +14,11 @@ from fastapi import APIRouter, Depends, Form, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, ratelimit
 from ..config import settings
 from ..database import get_db
 from ..deps import SESSION_COOKIE
+from ..ratelimit import client_ip
 from ..models import utcnow
 from ..security import create_token, hash_password, verify_password, verify_token
 from ..services import charts
@@ -30,6 +31,11 @@ from ..templating import templates
 from ..utils import unique_shop_slug
 
 router = APIRouter(prefix="/app", tags=["merchant-ui"], include_in_schema=False)
+
+# Connexion : 8 essais par quart d'heure, assez pour un mot de passe oublié,
+# trop peu pour parcourir un dictionnaire.
+LOGIN_LIMIT = 8
+LOGIN_WINDOW = 900
 
 STATUS_LABELS = {
     "new": "Nouvelle", "confirmed": "Confirmée", "preparing": "En préparation",
@@ -134,6 +140,27 @@ def login_submit(
     db: Session = Depends(get_db),
 ):
     identifier = identifier.strip()
+
+    # Sans plafond, un script pouvait essayer les mots de passe en continu. On
+    # compte par IP *et* par identifiant visé : bloquer la seule IP laisserait
+    # passer une attaque distribuée sur un compte connu.
+    throttle_keys = [f"login:ip:{client_ip(request)}", f"login:id:{identifier.lower()}"]
+    for key in throttle_keys:
+        allowed, retry_after = ratelimit.hit(key, limit=LOGIN_LIMIT, window=LOGIN_WINDOW)
+        if not allowed:
+            return templates.TemplateResponse(
+                request, "merchant/login.html",
+                {
+                    "mode": "login",
+                    "error": (
+                        "Trop de tentatives de connexion. "
+                        f"Réessayez dans {retry_after} secondes."
+                    ),
+                },
+                status_code=429,
+                headers={"Retry-After": str(retry_after)},
+            )
+
     user = (
         db.query(models.User)
         .filter((models.User.email == identifier) | (models.User.phone == identifier))
@@ -144,6 +171,9 @@ def login_submit(
             request, "merchant/login.html",
             {"mode": "login", "error": "Identifiants invalides."}, status_code=401,
         )
+
+    for key in throttle_keys:
+        ratelimit.reset(key)
     if user.role == models.UserRole.SUPERADMIN:
         resp = _redirect("/admin")
     elif _active_shop(db, user):

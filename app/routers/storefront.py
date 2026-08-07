@@ -15,7 +15,6 @@ from ..templating import templates
 from ..services.whatsapp import build_wa_link
 
 logger = logging.getLogger("smartshop")
-logger.warning("⚠️ STOREFRONT ROUTER LOADED - Module is alive and running!")
 
 router = APIRouter(tags=["storefront"], include_in_schema=False, prefix="")
 
