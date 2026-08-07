@@ -75,6 +75,12 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    # Les pages HTML embarquent le JavaScript de l'application : sans en-tête de
+    # cache, les navigateurs appliquent un cache heuristique et continuent de
+    # servir l'ancienne version après un déploiement. On les marque donc comme
+    # non stockables (les fichiers de /static gardent leur cache normal).
+    if response.headers.get("content-type", "").startswith("text/html"):
+        response.headers["Cache-Control"] = "no-store, must-revalidate"
     return response
 
 

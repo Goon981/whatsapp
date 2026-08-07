@@ -181,6 +181,36 @@
         .sticky-cta {
             margin-bottom: 12px;
         }
+
+        .payment-msg {
+            display: none;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .payment-msg.err {
+            display: block;
+            background: #fdecea;
+            border: 1px solid #e53935;
+            color: #b71c1c;
+        }
+
+        .payment-msg.ok {
+            display: block;
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .payment-msg.info {
+            display: block;
+            background: #e3f2fd;
+            border: 1px solid #1e88e5;
+            color: #0d47a1;
+        }
     </style>
 </head>
 <body>
@@ -262,6 +292,8 @@
                 </small>
             </div>
 
+            <div id="payment-msg" class="payment-msg" role="status" aria-live="polite"></div>
+
             <button class="primary sticky-cta" id="confirmBtn" onclick="confirmPayment()" disabled>
                 🔒 Confirmer et payer
             </button>
@@ -277,13 +309,37 @@
         let selectedPaymentMethod = null;
         const SHOP_ID = {% if shop %}{{ shop.id }}{% else %}null{% endif %};
 
+        function showMessage(text, kind) {
+            const box = document.getElementById('payment-msg');
+            box.className = 'payment-msg ' + kind;
+            box.textContent = text;
+        }
+
+        function clearMessage() {
+            const box = document.getElementById('payment-msg');
+            box.className = 'payment-msg';
+            box.textContent = '';
+        }
+
+        function digitsOf(value) {
+            return (value || '').replace(/\D/g, '');
+        }
+
+        /** Le bouton ne s'active qu'une fois les trois champs renseignés. */
+        function updateConfirmState() {
+            const phoneOk = digitsOf(document.getElementById('payment-phone').value).length >= 9;
+            document.getElementById('confirmBtn').disabled =
+                !(selectedPlan && selectedPaymentMethod && phoneOk);
+        }
+
         function selectPlan(planName, element) {
             document.querySelectorAll('.plan-card').forEach(card => {
                 card.classList.remove('selected');
             });
             element.classList.add('selected');
             selectedPlan = planName;
-            document.getElementById('confirmBtn').disabled = false;
+            clearMessage();
+            updateConfirmState();
         }
 
         function selectPaymentMethod(method, element) {
@@ -294,61 +350,81 @@
             element.style.borderColor = '#25d366';
             element.style.background = '#f0f8f5';
             selectedPaymentMethod = method;
+            clearMessage();
+            updateConfirmState();
         }
 
         function confirmPayment() {
-            if (!selectedPlan || !selectedPaymentMethod) {
-                alert('Veuillez sélectionner un plan et une méthode de paiement');
-                return;
-            }
-
             const btn = document.getElementById('confirmBtn');
+            const phone = (document.getElementById('payment-phone').value || '').trim();
+
+            if (!selectedPlan) {
+                showMessage('Choisissez d\'abord un plan d\'abonnement.', 'err');
+                return;
+            }
+            if (!selectedPaymentMethod) {
+                showMessage('Choisissez un moyen de paiement (MTN, Orange, Airtel ou carte).', 'err');
+                return;
+            }
+            if (digitsOf(phone).length < 9) {
+                showMessage('Entrez un numéro de téléphone valide, ex. +237690088572.', 'err');
+                return;
+            }
+            if (SHOP_ID === null) {
+                showMessage('Votre boutique n\'est pas encore créée. Vous allez être redirigé…', 'err');
+                setTimeout(() => { window.location.href = '/app/onboarding'; }, 1500);
+                return;
+            }
+
+            const restore = () => {
+                btn.disabled = false;
+                btn.textContent = '🔒 Confirmer et payer';
+            };
+
             btn.disabled = true;
-            btn.textContent = 'Initiation du paiement...';
+            btn.textContent = 'Initiation du paiement…';
+            showMessage('Initiation du paiement en cours…', 'info');
 
-            // Récupérer le numéro de téléphone depuis le formulaire
-            const phone = (document.getElementById('payment-phone')?.value || '').trim();
+            const url = `/api/billing/campay/initiate?shop_id=${SHOP_ID}`
+                + `&plan=${encodeURIComponent(selectedPlan)}`
+                + `&phone=${encodeURIComponent(phone)}`
+                + `&network=${encodeURIComponent(selectedPaymentMethod)}`;
 
-            if (!phone || phone.length < 10) {
-                btn.disabled = false;
-                btn.textContent = '🔒 Confirmer et payer';
-                alert('⚠️ Veuillez entrer un numéro de téléphone valide (au moins 10 chiffres)');
-                return;
-            }
-
-            if (!phone.includes('+') && !phone.startsWith('237')) {
-                alert('⚠️ Le numéro doit être au format international (+237...) ou 237...');
-                btn.disabled = false;
-                btn.textContent = '🔒 Confirmer et payer';
-                return;
-            }
-
-            // Appeler l'endpoint Campay
-            fetch(`/api/billing/campay/initiate?shop_id=${SHOP_ID}&plan=${selectedPlan}&phone=${encodeURIComponent(phone)}&network=${selectedPaymentMethod}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Paiement initié! Veuillez compléter votre paiement sur votre téléphone.');
-                    window.location.href = '/app/dashboard';
-                } else {
-                    alert('Erreur: ' + (data.error || 'Impossible d\'initier le paiement'));
-                    btn.disabled = false;
-                    btn.textContent = '🔒 Confirmer et payer';
-                }
-            })
-            .catch(err => {
-                alert('Erreur: ' + err.message);
-                btn.disabled = false;
-                btn.textContent = '🔒 Confirmer et payer';
-            });
+            fetch(url, { method: 'POST', credentials: 'same-origin' })
+                .then(res => res.json().catch(() => ({})).then(data => ({ res, data })))
+                .then(({ res, data }) => {
+                    if (res.ok && data.success) {
+                        showMessage(
+                            'Paiement initié. Confirmez la demande sur votre téléphone pour activer votre abonnement.',
+                            'ok'
+                        );
+                        setTimeout(() => { window.location.href = '/app/dashboard'; }, 2500);
+                        return;
+                    }
+                    // Remonter le motif réel renvoyé par le serveur plutôt qu'un
+                    // message générique, sinon l'échec est impossible à diagnostiquer.
+                    let reason = data.error || data.message;
+                    if (!reason && Array.isArray(data.detail)) {
+                        reason = data.detail.map(d => d.msg).join(', ');
+                    }
+                    reason = reason || data.detail || `Le serveur a répondu ${res.status}.`;
+                    showMessage('Paiement impossible : ' + reason, 'err');
+                    restore();
+                })
+                .catch(err => {
+                    showMessage('Connexion au serveur impossible : ' + err.message, 'err');
+                    restore();
+                });
         }
 
         function skipPayment() {
-            window.location.href = '/app/onboarding';
+            window.location.href = '/app/dashboard';
         }
+
+        document.getElementById('payment-phone').addEventListener('input', () => {
+            clearMessage();
+            updateConfirmState();
+        });
     </script>
 </body>
 </html>
