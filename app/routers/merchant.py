@@ -100,7 +100,7 @@ def index(request: Request, db: Session = Depends(get_db)):
         return _redirect("/app/login")
     if user.role == models.UserRole.SUPERADMIN:
         return _redirect("/admin")
-    return _redirect("/app/dashboard" if _active_shop(db, user) else "/app/payment")
+    return _redirect("/app/dashboard" if _active_shop(db, user) else "/app/onboarding")
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -128,8 +128,10 @@ def login_submit(
         )
     if user.role == models.UserRole.SUPERADMIN:
         resp = _redirect("/admin")
+    elif _active_shop(db, user):
+        resp = _redirect("/app/dashboard")
     else:
-        resp = _redirect("/app/payment")
+        resp = _redirect("/app/onboarding")
     _set_session(resp, user)
     return resp
 
@@ -175,7 +177,7 @@ def register_submit(
     db.commit()
     db.refresh(user)
 
-    resp = _redirect("/app/payment")
+    resp = _redirect("/app/onboarding")
     _set_session(resp, user)
     return resp
 
@@ -892,6 +894,8 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
         return _redirect("/app/login")
 
     shop = _active_shop(db, user)
+    if shop is None:
+        return _redirect("/app/onboarding")
     return templates.TemplateResponse(request, "merchant/payment.html", {"shop": shop, "user": user})
 
 
