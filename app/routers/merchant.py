@@ -6,6 +6,8 @@ l'utilisateur (RM-05).
 from __future__ import annotations
 
 from datetime import timedelta
+import hashlib
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -21,7 +23,7 @@ from ..deps import SESSION_COOKIE
 from ..ratelimit import client_ip
 from ..models import utcnow
 from ..security import create_token, hash_password, verify_password, verify_token
-from ..services import charts
+from ..services import charts, mailer
 from ..services import orders as orders_service
 from ..services import stats as stats_service
 from ..services.orders import OrderError
@@ -29,6 +31,8 @@ from ..services.theme import DEFAULT_BRAND, build_dark_palette, build_palette
 from ..services.whatsapp import build_wa_link
 from ..templating import templates
 from ..utils import unique_shop_slug
+
+logger = logging.getLogger("smartshop")
 
 router = APIRouter(prefix="/app", tags=["merchant-ui"], include_in_schema=False)
 
@@ -223,6 +227,7 @@ def register_submit(
     request: Request,
     full_name: str = Form(...),
     password: str = Form(...),
+    password_confirm: str = Form(""),
     email: str = Form(""),
     phone: str = Form(""),
     accept_terms: str = Form(None),
@@ -237,6 +242,11 @@ def register_submit(
         error = "Renseignez un e-mail ou un téléphone."
     elif len(password) < 8:
         error = "Le mot de passe doit contenir au moins 8 caractères."
+    elif password != password_confirm:
+        # La concordance n'était vérifiée que par le script de la page : une
+        # faute de frappe passait dès que le JavaScript ne s'exécutait pas, et
+        # le commerçant se retrouvait avec un mot de passe qu'il ignorait.
+        error = "Les deux mots de passe ne correspondent pas."
     elif email and db.query(models.User).filter(models.User.email == email).first():
         error = "Cet e-mail est déjà utilisé."
     elif phone and db.query(models.User).filter(models.User.phone == phone).first():
@@ -255,6 +265,157 @@ def register_submit(
     db.refresh(user)
 
     resp = _redirect("/app/onboarding")
+    _set_session(resp, user)
+    return resp
+
+
+# --------------------------------------------------------------------------- #
+# Mot de passe oublié
+# --------------------------------------------------------------------------- #
+# Le lien vaut une connexion : durée courte, et trois demandes par heure et par
+# adresse IP pour ne pas transformer la route en robinet à e-mails.
+RESET_MAX_AGE = 30 * 60
+RESET_LIMIT = 3
+RESET_WINDOW = 3600
+
+# Réponse volontairement identique que le compte existe ou non : la distinguer
+# permettrait de savoir quelles adresses sont inscrites sur la plateforme.
+RESET_SENT_MESSAGE = (
+    "Si un compte correspond, un lien de réinitialisation vient d'être envoyé. "
+    "Le lien expire dans 30 minutes."
+)
+
+
+def _password_fingerprint(user: models.User) -> str:
+    """Empreinte du mot de passe actuel, incluse dans le jeton.
+
+    Elle rend le lien utilisable une seule fois sans stocker quoi que ce soit :
+    la réinitialisation change le hachage, donc l'empreinte, donc tout jeton
+    encore en circulation cesse d'être valide.
+    """
+    return hashlib.sha256((user.password_hash or "").encode()).hexdigest()[:16]
+
+
+@router.get("/mot-de-passe-oublie", response_class=HTMLResponse)
+def forgot_password_page(request: Request):
+    return templates.TemplateResponse(request, "merchant/forgot_password.html", {"mode": "request"})
+
+
+@router.post("/mot-de-passe-oublie", response_class=HTMLResponse)
+def forgot_password_submit(
+    request: Request,
+    identifier: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    allowed, retry_after = ratelimit.hit(
+        f"reset:{client_ip(request)}", limit=RESET_LIMIT, window=RESET_WINDOW
+    )
+    if not allowed:
+        minutes = max(1, retry_after // 60)
+        return templates.TemplateResponse(
+            request, "merchant/forgot_password.html",
+            {"mode": "request", "error": f"Trop de demandes. Réessayez dans {minutes} minutes."},
+            status_code=429, headers={"Retry-After": str(retry_after)},
+        )
+
+    identifier = identifier.strip()
+    user = (
+        db.query(models.User)
+        .filter((models.User.email == identifier) | (models.User.phone == identifier))
+        .first()
+    )
+
+    delivered = False
+    if user and user.email and user.is_active:
+        token = create_token(
+            {"reset": user.id, "pw": _password_fingerprint(user)}, max_age=RESET_MAX_AGE
+        )
+        link = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/app/reinitialiser?token={token}"
+        delivered = mailer.send(
+            user.email,
+            "Réinitialisation de votre mot de passe BAOBAY",
+            f"Bonjour {user.full_name or ''},\n\n"
+            f"Pour choisir un nouveau mot de passe, ouvrez ce lien :\n{link}\n\n"
+            "Le lien expire dans 30 minutes et ne fonctionne qu'une fois.\n"
+            "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.\n",
+        )
+        if not delivered:
+            # L'envoi a échoué : le lien va dans le journal du serveur pour que
+            # le support puisse le transmettre, plutôt que d'être perdu.
+            logger.warning("Lien de réinitialisation non distribué pour l'utilisateur %s.", user.id)
+
+    return templates.TemplateResponse(
+        request, "merchant/forgot_password.html",
+        {
+            "mode": "sent",
+            "message": RESET_SENT_MESSAGE,
+            "mail_configured": mailer.is_configured(),
+            "support": settings.SUPPORT_WHATSAPP,
+        },
+    )
+
+
+def _reset_user(db: Session, token: str) -> models.User | None:
+    payload = verify_token(token)
+    if not payload or "reset" not in payload:
+        return None
+    user = db.get(models.User, int(payload["reset"]))
+    if user is None or not user.is_active:
+        return None
+    if payload.get("pw") != _password_fingerprint(user):
+        return None
+    return user
+
+
+@router.get("/reinitialiser", response_class=HTMLResponse)
+def reset_password_page(request: Request, token: str = "", db: Session = Depends(get_db)):
+    if _reset_user(db, token) is None:
+        return templates.TemplateResponse(
+            request, "merchant/forgot_password.html",
+            {"mode": "request", "error": "Ce lien est expiré ou a déjà été utilisé."},
+            status_code=400,
+        )
+    return templates.TemplateResponse(
+        request, "merchant/forgot_password.html", {"mode": "reset", "token": token}
+    )
+
+
+@router.post("/reinitialiser", response_class=HTMLResponse)
+def reset_password_submit(
+    request: Request,
+    token: str = Form(...),
+    password: str = Form(...),
+    password_confirm: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    user = _reset_user(db, token)
+    if user is None:
+        return templates.TemplateResponse(
+            request, "merchant/forgot_password.html",
+            {"mode": "request", "error": "Ce lien est expiré ou a déjà été utilisé."},
+            status_code=400,
+        )
+
+    error = None
+    if len(password) < 8:
+        error = "Le mot de passe doit contenir au moins 8 caractères."
+    elif password != password_confirm:
+        error = "Les deux mots de passe ne correspondent pas."
+    if error:
+        return templates.TemplateResponse(
+            request, "merchant/forgot_password.html",
+            {"mode": "reset", "token": token, "error": error}, status_code=422,
+        )
+
+    user.password_hash = hash_password(password)
+    db.commit()
+
+    # Le plafond de tentatives de connexion est levé : l'utilisateur vient de
+    # prouver qu'il contrôle l'adresse, le laisser bloqué n'aurait aucun sens.
+    for key in (f"login:id:{(user.email or '').lower()}", f"api-login:id:{(user.email or '').lower()}"):
+        ratelimit.reset(key)
+
+    resp = _redirect("/app/dashboard" if _active_shop(db, user) else "/app/onboarding")
     _set_session(resp, user)
     return resp
 

@@ -23,35 +23,55 @@
         <label for="phone">Téléphone</label>
         <input id="phone" name="phone" placeholder="+237…">
         <label for="password">Mot de passe (8 caractères min.)</label>
-        <input id="password" name="password" type="password" minlength="8" required>
+        <input id="password" name="password" type="password" minlength="8" required autocomplete="new-password">
+        <label for="password_confirm">Confirmez le mot de passe</label>
+        <input id="password_confirm" name="password_confirm" type="password" minlength="8" required autocomplete="new-password">
+        <div id="passwordError" class="hint" style="color:var(--red-fg);display:none"></div>
         <div class="checkline mt"><input type="checkbox" id="accept" name="accept_terms" required checked><label for="accept" style="margin:0" class="hint">J'accepte les conditions d'utilisation et la politique de confidentialité</label></div>
         <button class="btn block mt" type="submit">Créer mon compte</button>
       </form>
       <script>
-        function validateFullName() {
-          const fullName = document.getElementById('full_name').value.trim();
-          const errorDiv = document.getElementById('fullNameError');
-          const words = fullName.split(/\s+/).filter(w => w.length > 0);
+        (function () {
+          var form = document.getElementById('registerForm');
+          var fullName = document.getElementById('full_name');
+          var nameError = document.getElementById('fullNameError');
+          var pwd = document.getElementById('password');
+          var confirm = document.getElementById('password_confirm');
+          var pwdError = document.getElementById('passwordError');
 
-          if (words.length < 2) {
-            errorDiv.textContent = 'Veuillez entrer votre prénom et nom';
-            errorDiv.style.display = 'block';
-            return false;
-          } else {
-            errorDiv.style.display = 'none';
-            return true;
+          function show(el, message) {
+            el.textContent = message || '';
+            el.style.display = message ? 'block' : 'none';
+            return !message;
           }
-        }
 
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-          if (!validateFullName()) {
-            e.preventDefault();
-            alert('Veuillez entrer votre nom complet (prénom + nom)');
+          function checkName() {
+            var words = fullName.value.trim().split(/\s+/).filter(function (w) { return w.length; });
+            return show(nameError, words.length < 2 ? 'Indiquez votre prénom et votre nom.' : '');
           }
-        });
 
-        // Validation on input
-        document.getElementById('full_name').addEventListener('blur', validateFullName);
+          function checkPassword() {
+            if (confirm.value && pwd.value !== confirm.value) {
+              return show(pwdError, 'Les deux mots de passe ne correspondent pas.');
+            }
+            return show(pwdError, '');
+          }
+
+          fullName.addEventListener('blur', checkName);
+          pwd.addEventListener('input', checkPassword);
+          confirm.addEventListener('input', checkPassword);
+
+          // Le contrôle est refait côté serveur : celui-ci n'évite qu'un
+          // aller-retour, il ne remplace pas la validation.
+          form.addEventListener('submit', function (e) {
+            var ok = checkName();
+            if (!checkPassword()) ok = false;
+            if (!ok) {
+              e.preventDefault();
+              (pwdError.style.display === 'block' ? confirm : fullName).focus();
+            }
+          });
+        })();
       </script>
       <p class="center mt muted">Déjà inscrit ? <a href="/app/login">Se connecter</a></p>
       {% else %}
@@ -62,6 +82,7 @@
         <input id="password" name="password" type="password" required autocomplete="current-password">
         <button class="btn block mt" type="submit">Se connecter</button>
       </form>
+      <p class="center mt8"><a href="/app/mot-de-passe-oublie" class="small">Mot de passe oublié ?</a></p>
       <p class="center mt muted">Nouveau ? <a href="/app/register">Créer une boutique</a></p>
       {% endif %}
     </div>

@@ -26,7 +26,7 @@
     <div style="padding:16px">
       <h2 style="margin-bottom:6px">{{ product.name }}</h2>
       <div class="between">
-        <div class="price" style="font-size:1.5rem;font-weight:800;color:var(--text)">
+        <div class="price price-lg">
           <span id="unit-price" data-base="{{ product.effective_price }}">{{ product.effective_price|fcfa }}</span>
           {% if product.promo_price is not none and product.promo_price < product.price %}<span class="old">{{ product.price|fcfa }}</span>{% endif %}
         </div>
@@ -89,12 +89,21 @@
     }
 
     function handleImageError(img) {
-      var allImages = Array.from(document.querySelectorAll('.thumb button img')).map(i => i.src);
-      var fallback = allImages.find(src => src && src !== img.src);
-      if (fallback && img.src !== fallback) {
-        img.src = fallback;
-      } else {
-        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23eee"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3EErreur%3C/text%3E%3C/svg%3E';
+      // Les vignettes vivent dans « .gallery » : cherchées sous « .thumb »,
+      // aucune autre image n'était trouvée et le repli était un SVG sans
+      // dimensions, qui laissait un grand vide en haut de la fiche.
+      var others = Array.from(document.querySelectorAll('.gallery img'))
+        .map(function (i) { return i.getAttribute('src'); })
+        .filter(function (src) { return src && src !== img.getAttribute('src'); });
+      if (others.length) { img.src = others[0]; return; }
+      // Plus aucune image exploitable : afficher le pictogramme de la vitrine.
+      var host = img.parentNode;
+      img.remove();
+      if (host && !host.querySelector('.ph')) {
+        var ph = document.createElement('span');
+        ph.className = 'ph';
+        ph.innerHTML = (window.ICONS && window.ICONS.bag) || '';
+        host.appendChild(ph);
       }
     }
 

@@ -193,6 +193,15 @@ class Settings:
     # Numéro WhatsApp du support (chiffres uniquement, format international).
     SUPPORT_WHATSAPP: str = os.getenv("SMARTSHOP_SUPPORT_WHATSAPP", "237600000000")
 
+    # Envoi d'e-mails (réinitialisation de mot de passe). Sans SMTP_HOST, la
+    # fonctionnalité reste accessible mais oriente vers le support WhatsApp.
+    SMTP_HOST: str = os.getenv("SMARTSHOP_SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMARTSHOP_SMTP_PORT", "587") or 587)
+    SMTP_USER: str = os.getenv("SMARTSHOP_SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMARTSHOP_SMTP_PASSWORD", "")
+    SMTP_FROM: str = os.getenv("SMARTSHOP_SMTP_FROM", "")
+    SMTP_TLS: bool = _get_bool("SMARTSHOP_SMTP_TLS", True)
+
     # Cookie sécurisé uniquement en HTTPS : activé d'office en production, où le
     # laisser à False exposait le jeton de session sur une connexion en clair.
     COOKIE_SECURE: bool = _get_bool("SMARTSHOP_COOKIE_SECURE", _is_production())
