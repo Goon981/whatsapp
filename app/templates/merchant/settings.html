@@ -9,7 +9,35 @@
       <h3>Identité</h3>
       <label for="name">Nom</label><input id="name" name="name" value="{{ shop.name }}" required>
       <label for="description">Description</label><textarea id="description" name="description">{{ shop.description or '' }}</textarea>
-      <label for="theme_color">Couleur principale</label><input id="theme_color" name="theme_color" type="color" value="{{ shop.theme_color }}" style="height:52px">
+
+      <label>Couleur de la boutique</label>
+      <p class="hint" style="margin-top:0">Toutes les autres teintes en sont calculées, avec un contraste garanti.</p>
+
+      <div class="swatches" role="group" aria-label="Teintes proposées">
+        {% for label, value in theme_presets %}
+        <button type="button" class="swatch" data-color="{{ value }}" title="{{ label }}"
+                aria-label="{{ label }}" style="--sw: {{ value }}"></button>
+        {% endfor %}
+      </div>
+
+      <div class="row" style="align-items:center;gap:10px;margin-top:12px">
+        <input id="theme_color" name="theme_color" type="color" value="{{ shop.theme_color }}"
+               class="color-field" aria-label="Couleur personnalisée">
+        <div class="grow">
+          <div class="strong small" id="theme-name">Personnalisée</div>
+          <div class="hint" style="margin-top:2px" id="theme-hex">{{ shop.theme_color }}</div>
+        </div>
+      </div>
+
+      <div class="theme-preview" id="theme-preview" aria-live="polite">
+        <div class="tp-bar"><span class="tp-dot"></span>Votre boutique</div>
+        <div class="tp-body">
+          <span class="tp-btn">Commander</span>
+          <span class="tp-chip">Promo</span>
+          <a class="tp-link" href="#" onclick="return false">Voir tout</a>
+        </div>
+      </div>
+
       <label for="logo_url">Logo (URL)</label><input id="logo_url" name="logo_url" value="{{ shop.logo_url or '' }}">
     </div>
     <div class="card">
@@ -44,4 +72,61 @@
       <button class="btn secondary sm mt" type="submit">Ajouter la zone</button>
     </form>
   </div>
+
+<script>
+(function () {
+  const field   = document.getElementById('theme_color');
+  const preview = document.getElementById('theme-preview');
+  const hexOut  = document.getElementById('theme-hex');
+  const nameOut = document.getElementById('theme-name');
+  const swatches = Array.from(document.querySelectorAll('.swatch'));
+  if (!field || !preview) return;
+
+  // La palette est calculée par le serveur (services/theme.py) : la recalculer
+  // ici en JavaScript ferait mentir l'aperçu dès que l'algorithme évolue.
+  let pending = null;
+
+  function paint(palette) {
+    for (const [key, value] of Object.entries(palette)) {
+      preview.style.setProperty('--' + key, value);
+    }
+  }
+
+  function markActive(hex) {
+    const wanted = hex.toLowerCase();
+    let matched = null;
+    swatches.forEach(function (s) {
+      const on = s.dataset.color.toLowerCase() === wanted;
+      s.classList.toggle('active', on);
+      s.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (on) matched = s.title;
+    });
+    nameOut.textContent = matched || 'Personnalisée';
+    hexOut.textContent = wanted;
+  }
+
+  function refresh(hex) {
+    markActive(hex);
+    clearTimeout(pending);
+    // Le sélecteur natif émet un évènement à chaque pixel parcouru : sans
+    // ce délai, glisser dans le nuancier déclencherait des dizaines d'appels.
+    pending = setTimeout(function () {
+      fetch('/app/settings/theme-preview?color=' + encodeURIComponent(hex))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) { if (data) paint(data.light); })
+        .catch(function () { /* aperçu indisponible : le formulaire reste utilisable */ });
+    }, 120);
+  }
+
+  swatches.forEach(function (s) {
+    s.addEventListener('click', function () {
+      field.value = s.dataset.color;
+      refresh(s.dataset.color);
+    });
+  });
+  field.addEventListener('input', function () { refresh(field.value); });
+
+  refresh(field.value);
+})();
+</script>
 {% endblock %}

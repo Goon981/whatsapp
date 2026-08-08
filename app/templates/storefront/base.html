@@ -28,7 +28,18 @@
   <main class="container page">
     {% block content %}{% endblock %}
   </main>
-  <script>window.SHOP_SLUG = {{ shop.slug|tojson }}; window.SHOP_ID = {{ shop.id }};</script>
+  <script>
+    window.SHOP_SLUG = {{ shop.slug|tojson }};
+    window.SHOP_ID = {{ shop.id }};
+    /* Icônes utilisées par le panier rendu côté navigateur. Elles sont émises
+       par services/icons.py plutôt que redessinées en JavaScript : deux jeux de
+       tracés auraient fini par diverger. */
+    window.ICONS = {
+      bag: {{ icon('bag', 22)|string|tojson }},
+      trash: {{ icon('trash', 18)|string|tojson }},
+      lock: {{ icon('lock', 17)|string|tojson }}
+    };
+  </script>
   <script src="{{ asset('js/store.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>

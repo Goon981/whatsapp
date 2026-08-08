@@ -20,16 +20,22 @@ def format_fcfa_short(amount: int) -> str:
     return f"{int(amount):,}".replace(",", " ") + " FCFA"
 
 
-@lru_cache(maxsize=64)
-def _asset_digest(path: str) -> str:
+def _compute_digest(path: str) -> str:
     """Empreinte courte du contenu d'un fichier de ``/static``."""
     target = Path(settings.STATIC_DIR) / path.lstrip("/")
     try:
         return hashlib.sha256(target.read_bytes()).hexdigest()[:10]
     except OSError:
-        # Fichier absent : la version applicative suffit à distinguer les
-        # déploiements, mieux vaut servir la page que la faire échouer.
+        # Fichier absent : mieux vaut servir la page que la faire échouer.
         return "0"
+
+
+# En production les fichiers ne changent pas pendant l'exécution : l'empreinte
+# se calcule une fois. En développement il faut la relire, sinon l'URL reste
+# identique après une modification de la feuille de style — et comme elle est
+# servie en « immutable », le navigateur ne la redemande jamais.
+_cached_digest = lru_cache(maxsize=64)(_compute_digest)
+_asset_digest = _cached_digest if settings.IS_PRODUCTION else _compute_digest
 
 
 def asset(path: str) -> str:

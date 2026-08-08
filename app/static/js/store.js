@@ -4,6 +4,11 @@
   const SLUG = window.SHOP_SLUG || "shop";
   const KEY = "smartshop_cart_" + SLUG;
 
+  /* Icônes injectées par le gabarit (voir storefront/base.html). Une chaîne
+     vide si elles manquent : mieux vaut un bouton sans pictogramme qu'un
+     "undefined" affiché. */
+  function ic(name) { return (window.ICONS && window.ICONS[name]) || ""; }
+
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)) || []; }
     catch (e) { return []; }
@@ -95,11 +100,11 @@
       row.className = "card tight";
       row.innerHTML =
         '<div class="row-item" style="padding:0;border:none">' +
-        '<div class="th">' + (it.image ? '<img src="' + it.image + '" alt="">' : "🛒") + "</div>" +
+        '<div class="th">' + (it.image ? '<img src="' + it.image + '" alt="">' : ic("bag")) + "</div>" +
         '<div class="grow"><div class="t1">' + escapeHtml(it.name) + "</div>" +
         (it.variant_name ? '<div class="t2">' + escapeHtml(it.variant_name) + "</div>" : "") +
         '<div class="t2 strong" style="color:var(--text)">' + fcfa(it.price) + "</div></div>" +
-        '<button class="btn ghost" data-rm="' + idx + '" aria-label="Retirer">🗑</button></div>' +
+        '<button class="btn ghost" data-rm="' + idx + '" aria-label="Retirer">' + ic("trash") + "</button></div>" +
         '<div class="qty mini mt8"><button data-dec="' + idx + '">−</button>' +
         '<input type="number" min="1" value="' + it.quantity + '" data-qty="' + idx + '">' +
         '<button data-inc="' + idx + '">＋</button>' +
@@ -164,7 +169,7 @@
     } catch (err) {
       errBox.textContent = err.message;
       errBox.classList.remove("hide");
-      btn.disabled = false; btn.textContent = "🔒 Valider et envoyer sur WhatsApp";
+      btn.disabled = false; btn.innerHTML = ic("lock") + " Valider et envoyer sur WhatsApp";
     }
   }
 

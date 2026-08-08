@@ -64,6 +64,7 @@ _PATHS: dict[str, str] = {
     "user": '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
     "home": '<path d="M3 10.5 12 4l9 6.5"/><path d="M5 10v9h14v-9"/>',
     "plus": '<path d="M12 5v14M5 12h14"/>',
+    "logout": '<path d="M10 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/><path d="m16 16 5-4-5-4"/><path d="M21 12H9"/>',
     # --- Réseaux ---
     # Glyphe officiel, en aplat : la version au trait devenait illisible sous
     # 16 px, le combiné se refermant sur la bulle.

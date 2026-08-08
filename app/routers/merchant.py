@@ -10,7 +10,7 @@ import os
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, UploadFile, File
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,7 @@ from ..services import charts
 from ..services import orders as orders_service
 from ..services import stats as stats_service
 from ..services.orders import OrderError
-from ..services.theme import build_palette
+from ..services.theme import build_dark_palette, build_palette
 from ..services.whatsapp import build_wa_link
 from ..templating import templates
 from ..utils import unique_shop_slug
@@ -36,6 +36,22 @@ router = APIRouter(prefix="/app", tags=["merchant-ui"], include_in_schema=False)
 # trop peu pour parcourir un dictionnaire.
 LOGIN_LIMIT = 8
 LOGIN_WINDOW = 900
+
+# Teintes proposées à la personnalisation. Toutes sont assez soutenues pour
+# porter du texte clair et rester lisibles une fois éclaircies en mode sombre :
+# un pastel choisi au hasard donnait une barre supérieure délavée.
+THEME_PRESETS = [
+    ("Forêt", "#16824c"),
+    ("Émeraude", "#0f766e"),
+    ("Océan", "#0e6ba8"),
+    ("Indigo", "#4340a8"),
+    ("Prune", "#8a3a6b"),
+    ("Rubis", "#b02f46"),
+    ("Terre", "#a1512a"),
+    ("Ocre", "#8f6b12"),
+    ("Ardoise", "#3d5561"),
+    ("Nuit", "#26303f"),
+]
 
 STATUS_LABELS = {
     "new": "Nouvelle", "confirmed": "Confirmée", "preparing": "En préparation",
@@ -914,8 +930,26 @@ def settings_page(request: Request, db: Session = Depends(get_db)):
     _, shop = ctx
     zones = db.query(models.DeliveryZone).filter(models.DeliveryZone.shop_id == shop.id).all()
     return templates.TemplateResponse(
-        request, "merchant/settings.html", {"shop": shop, "active_tab": "settings", "zones": zones}
+        request, "merchant/settings.html",
+        {
+            "shop": shop, "active_tab": "settings", "zones": zones,
+            "theme_presets": THEME_PRESETS,
+        },
     )
+
+
+@router.get("/settings/theme-preview")
+def theme_preview(request: Request, color: str = "", db: Session = Depends(get_db)):
+    """Palette dérivée d'une couleur, pour l'aperçu en direct des réglages.
+
+    L'aperçu appelle le même code que le rendu des pages : dupliquer le calcul
+    en JavaScript aurait laissé les deux implémentations diverger, et le
+    commerçant aurait choisi sa couleur sur un aperçu qui ment.
+    """
+    _, redirect = _require_shop(request, db)
+    if redirect:
+        raise HTTPException(status_code=403, detail="Session expirée")
+    return {"light": build_palette(color), "dark": build_dark_palette(color)}
 
 
 @router.post("/settings", response_class=HTMLResponse)

@@ -11,14 +11,13 @@
 <body>
   <header class="topbar">
     <div class="container">
-      <div class="logo" style="display:flex;align-items:center;justify-content:center">{{ icon('shield', 18) }}</div>
-      <div><h1>Super-administration</h1><div class="sub">Plateforme BAOBAY</div></div>
-      <div class="spacer"></div>
-      <a href="/app/logout" title="Déconnexion">⎋</a>
+      <div class="logo-badge">{{ icon('shield', 22) }}</div>
+      <div class="grow"><h1>Administration</h1><div class="sub">Plateforme BAOBAY</div></div>
+      <a class="icon-btn" href="/app/logout" title="Déconnexion" aria-label="Déconnexion">{{ icon('logout', 20) }}</a>
     </div>
   </header>
   <main class="container page">
-    <div class="pill-tabs">
+    <div class="pills">
       <a href="/admin" class="{% if active_tab=='overview' %}active{% endif %}">Vue globale</a>
       <a href="/admin/billing" class="{% if active_tab=='billing' %}active{% endif %}">Abonnements</a>
       <a href="/admin/shops" class="{% if active_tab=='shops' %}active{% endif %}">Boutiques</a>

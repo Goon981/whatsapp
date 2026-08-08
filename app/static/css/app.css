@@ -163,6 +163,9 @@ p { margin: 0 0 .8em; text-wrap: pretty; }
 .muted { color: var(--muted); }
 .center { text-align: center; }
 .right { text-align: right; }
+.left { text-align: left; }
+.content { min-width: 0; }
+.top-spacer { flex: 1; }
 .mt { margin-top: var(--s4); } .mb { margin-bottom: var(--s4); } .mt8 { margin-top: var(--s2); }
 .grow { flex: 1; min-width: 0; }
 .row { display: flex; gap: var(--s3); }
@@ -486,6 +489,56 @@ select {
 }
 .status { display: inline-flex; align-items: center; gap: 6px; }
 
+/* ==========================================================================
+   Personnalisation de la boutique (réglages)
+   ========================================================================== */
+.swatches { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2); }
+.swatch {
+  width: 40px; height: 40px; border-radius: var(--r-sm); flex: none;
+  background: var(--sw); border: none; cursor: pointer; padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12);
+  transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.swatch:hover { transform: translateY(-2px); }
+/* Anneau tracé avec la couleur de la page : lisible sur n'importe quelle teinte. */
+.swatch.active {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12),
+              0 0 0 2px var(--surface), 0 0 0 4px var(--text);
+}
+.color-field {
+  width: 56px; height: 56px; min-height: 56px; flex: none;
+  padding: 4px; border-radius: var(--r-sm); cursor: pointer;
+  border: 1.5px solid var(--border-strong); background: var(--surface);
+}
+
+/* Aperçu : ses propres jetons sont réécrits par le script, il ne suit donc
+   pas la palette de la page tant que le choix n'est pas enregistré. */
+.theme-preview {
+  margin-top: var(--s4); border-radius: var(--r-md); overflow: hidden;
+  border: 1px solid var(--border);
+}
+.theme-preview .tp-bar {
+  background: var(--brand); color: var(--on-brand);
+  padding: var(--s3) var(--s4); font-weight: 700; font-size: .92rem;
+  display: flex; align-items: center; gap: var(--s2);
+}
+.theme-preview .tp-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #34d97b; flex: none;
+}
+.theme-preview .tp-body {
+  background: var(--surface); padding: var(--s4);
+  display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+}
+.theme-preview .tp-btn {
+  background: var(--brand); color: var(--on-brand);
+  padding: var(--s2) var(--s4); border-radius: var(--r-sm); font-weight: 650; font-size: .88rem;
+}
+.theme-preview .tp-chip {
+  background: var(--brand-050); color: var(--brand-ink);
+  padding: var(--s2) var(--s3); border-radius: var(--r-full); font-weight: 700; font-size: .78rem;
+}
+.theme-preview .tp-link { color: var(--brand-600); font-weight: 650; font-size: .88rem; }
+
 /* Page d'accueil : marque du bandeau et pictogrammes des étapes. */
 .hero-mark {
   width: 68px; height: 68px; border-radius: var(--r-lg);
@@ -575,6 +628,30 @@ select {
 .product .order-btn:hover { box-shadow: var(--shadow-xs); }
 .product .order-btn .wa-ic { width: 14px; height: 14px; flex-shrink: 0; }
 
+/* Image principale d'une fiche produit */
+.hero-thumb {
+  aspect-ratio: 16 / 12; background: var(--surface-2); position: relative;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.hero-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Galerie de vignettes d'une fiche produit */
+.gallery {
+  display: flex; gap: var(--s2); overflow-x: auto;
+  padding: var(--s3); border-top: 1px solid var(--border);
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.gallery::-webkit-scrollbar { display: none; }
+.gallery-thumb {
+  width: 62px; height: 62px; flex: none; padding: 0; cursor: pointer;
+  border: 2px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface-2); overflow: hidden;
+  transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.gallery-thumb:hover { transform: translateY(-2px); }
+.gallery-thumb.active { border-color: var(--brand); }
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
 /* ==========================================================================
    Listes
    ========================================================================== */
@@ -661,9 +738,14 @@ select {
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: .7rem; color: #fff;
 }
-.pm-mtn { background: #ffcc00; color: #23200a; }
-.pm-om  { background: #ff6600; color: #fff; }
-.pm-cod { background: var(--brand-050); color: var(--brand-ink); }
+/* Couleurs des opérateurs : ce sont leurs marques, elles ne suivent donc pas
+   le thème de la boutique. Airtel et la carte n'avaient aucune règle, si bien
+   que leur libellé s'affichait en blanc sur blanc. */
+.pm-mtn  { background: #ffcc00; color: #23200a; }
+.pm-om   { background: #ff6600; color: #fff; }
+.pm-am   { background: #e8112d; color: #fff; }
+.pm-card { background: var(--gray-bg); color: var(--text-2); }
+.pm-cod  { background: var(--brand-050); color: var(--brand-ink); }
 .pay-opt .pm-t1 { font-weight: 700; color: var(--text); }
 .pay-opt .pm-t2 { color: var(--muted); font-size: .8rem; }
 .pay-opt .radio {
