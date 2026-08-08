@@ -25,6 +25,9 @@ CAMPAY_BASE_URLS = {
     "production": "https://www.campay.net/api",
 }
 CAMPAY_TIMEOUT = 30.0
+# Plafond du bac à sable Campay : au-delà, il répond ER201 « This is a demo
+# system ». Y demander le prix réel rendait tout test de bout en bout impossible.
+CAMPAY_SANDBOX_MAX_AMOUNT = 25
 
 PLAN_PRICES = {
     "starter": 5000,      # 1 mois
@@ -429,6 +432,19 @@ async def initiate_campay_payment(
     # au lieu de le déduire du montant reçu.
     reference = f"SHOP{shop_id}_{plan}_{int(utcnow().timestamp())}"
 
+    # Le bac à sable Campay refuse tout montant supérieur à 25 XAF
+    # (« This is a demo system », ER201), ce qui empêchait de valider la chaîne
+    # complète — demande USSD, confirmation, webhook, activation — avant de
+    # passer en production. On y demande donc un montant symbolique ; la formule
+    # voyage dans la référence, l'abonnement activé reste le bon.
+    charged = amount
+    if settings.CAMPAY_MODE == "sandbox" and amount > CAMPAY_SANDBOX_MAX_AMOUNT:
+        charged = CAMPAY_SANDBOX_MAX_AMOUNT
+        logger.info(
+            "Bac à sable : %s demandé à %s XAF au lieu de %s (plafond Campay).",
+            reference, charged, amount,
+        )
+
     clean_phone = phone.replace("+", "").lstrip("0")
     if not clean_phone.startswith("237"):
         clean_phone = "237" + clean_phone
@@ -449,11 +465,11 @@ async def initiate_campay_payment(
             "simulated": True,
         }
 
-    logger.info("Campay (%s): initiation de %s pour %s FCFA", settings.CAMPAY_MODE, reference, amount)
+    logger.info("Campay (%s): initiation de %s pour %s XAF", settings.CAMPAY_MODE, reference, charged)
     try:
         data = await _campay_collect(
             reference=reference,
-            amount=amount,
+            amount=charged,
             phone=clean_phone,
             description=f"Abonnement BAOBAY {plan} - {shop.name}",
         )
@@ -463,6 +479,7 @@ async def initiate_campay_payment(
         logger.error("Campay injoignable pour %s : %s", reference, exc)
         raise HTTPException(status_code=502, detail="Service de paiement injoignable. Réessayez.")
 
+    reduced = charged != amount
     return {
         "success": True,
         "reference": reference,
@@ -472,9 +489,19 @@ async def initiate_campay_payment(
         "shop_id": shop_id,
         "plan": plan,
         "amount": amount,
+        # Montant réellement demandé : il diffère du prix de la formule dans le
+        # bac à sable, et le taire donnerait au commerçant une confirmation
+        # trompeuse.
+        "charged_amount": charged,
+        "test_mode": reduced,
         "phone": clean_phone,
         "network": network,
-        "message": "Paiement initié - confirmez la demande sur votre téléphone",
+        "message": (
+            f"TEST — {charged} XAF demandés au lieu de {amount} (plafond du bac à sable "
+            "Campay). Confirmez sur votre téléphone : l'abonnement s'activera normalement."
+            if reduced else
+            "Paiement initié - confirmez la demande sur votre téléphone"
+        ),
         "simulated": False,
     }
 
