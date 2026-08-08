@@ -25,7 +25,7 @@ from ..services import charts
 from ..services import orders as orders_service
 from ..services import stats as stats_service
 from ..services.orders import OrderError
-from ..services.theme import build_dark_palette, build_palette
+from ..services.theme import DEFAULT_BRAND, build_dark_palette, build_palette
 from ..services.whatsapp import build_wa_link
 from ..templating import templates
 from ..utils import unique_shop_slug
@@ -276,7 +276,10 @@ def onboarding_page(request: Request, db: Session = Depends(get_db)):
         return _redirect("/app/login")
     if _active_shop(db, user):
         return _redirect("/app/dashboard")
-    return templates.TemplateResponse(request, "merchant/onboarding.html", {"shop": None})
+    return templates.TemplateResponse(
+        request, "merchant/onboarding.html",
+        {"shop": None, "theme_presets": THEME_PRESETS, "default_theme": DEFAULT_BRAND},
+    )
 
 
 @router.post("/onboarding", response_class=HTMLResponse)
@@ -938,16 +941,17 @@ def settings_page(request: Request, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/settings/theme-preview")
+@router.get("/theme-preview")
 def theme_preview(request: Request, color: str = "", db: Session = Depends(get_db)):
-    """Palette dérivée d'une couleur, pour l'aperçu en direct des réglages.
+    """Palette dérivée d'une couleur, pour l'aperçu en direct.
 
-    L'aperçu appelle le même code que le rendu des pages : dupliquer le calcul
-    en JavaScript aurait laissé les deux implémentations diverger, et le
-    commerçant aurait choisi sa couleur sur un aperçu qui ment.
+    Servie aux réglages comme à la création de boutique — d'où l'exigence d'un
+    simple compte connecté et non d'une boutique, qui n'existe pas encore à la
+    création. L'aperçu appelle le même code que le rendu des pages : dupliquer
+    le calcul en JavaScript avait laissé les deux formules diverger, et le
+    commerçant choisissait sa couleur sur un aperçu qui ne disait pas la vérité.
     """
-    _, redirect = _require_shop(request, db)
-    if redirect:
+    if _current_user(request, db) is None:
         raise HTTPException(status_code=403, detail="Session expirée")
     return {"light": build_palette(color), "dark": build_dark_palette(color)}
 

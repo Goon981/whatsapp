@@ -79,112 +79,35 @@
     <p class="hint">Choisissez votre couleur : les nuances et la couleur du texte
       sont calculées automatiquement pour rester lisibles.</p>
 
-    <label for="theme_color">Couleur principale</label>
-    <div style="display: flex; gap: 12px; align-items: center;">
-      <input id="theme_color" type="color" name="theme_color" value="var(--brand-600)"
-             style="width: 60px; height: 40px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">
-      <span id="theme_color_text" class="hint">var(--brand-600)</span>
+    <div class="swatches" role="group" aria-label="Teintes proposées">
+      {% for label, value in theme_presets %}
+      <button type="button" class="swatch" data-color="{{ value }}" title="{{ label }}"
+              aria-label="{{ label }}" style="--sw: {{ value }}"></button>
+      {% endfor %}
     </div>
 
-    <div id="palette-suggestions" style="margin-top: 12px;">
-      <span class="hint" style="display:block; margin-bottom:6px;">Suggestions</span>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;"></div>
-    </div>
-
-    <div style="margin-top: 20px; padding: 16px; background: var(--surface-2); border-radius: 8px;">
-      <strong>Aperçu</strong>
-      <div id="theme-preview" style="margin-top: 12px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);">
-        <div id="preview-bar" style="padding: 12px 14px; font-weight: 700;">Ma boutique</div>
-        <div style="background: var(--surface); padding: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <button type="button" id="preview-btn" style="padding: 9px 16px; border: none; border-radius: 8px; font-weight: 600; cursor: default;">Commander</button>
-          <span id="preview-tint" style="padding: 7px 12px; border-radius: 999px; font-weight: 600; font-size: 13px;">Catégorie</span>
-        </div>
+    <div class="row" style="align-items:center;gap:10px;margin-top:12px">
+      {# autocomplete off : sans cela le navigateur restaure la couleur d'une
+         création précédente au lieu de proposer la teinte par défaut. #}
+      <input id="theme_color" name="theme_color" type="color" value="{{ default_theme }}"
+             class="color-field" aria-label="Couleur personnalisée" autocomplete="off">
+      <div class="grow">
+        <div class="strong small" id="theme-name">Personnalisée</div>
+        <div class="hint" style="margin-top:2px" id="theme-hex">{{ default_theme }}</div>
       </div>
-      <div id="contrast-note" class="hint" style="margin-top: 8px;"></div>
     </div>
 
-    <script>
-      // Aperçu client de la palette calculée côté serveur (app/services/theme.py).
-      // Les deux doivent rester cohérents : même formule de contraste WCAG.
-      (function () {
-        var DARK_INK = '#12211b', LIGHT_INK = '#ffffff';
-        var themeInput = document.getElementById('theme_color');
-        var label = document.getElementById('theme_color_text');
-        var bar = document.getElementById('preview-bar');
-        var btn = document.getElementById('preview-btn');
-        var tint = document.getElementById('preview-tint');
-        var note = document.getElementById('contrast-note');
-
-        function toRgb(hex) {
-          var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-          return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [22, 130, 76];
-        }
-        function toHex(rgb) {
-          return '#' + rgb.map(function (c) {
-            return Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, '0');
-          }).join('');
-        }
-        function mix(c, t, r) { return c.map(function (v, i) { return v + (t[i] - v) * r; }); }
-        function luminance(rgb) {
-          var ch = rgb.map(function (c) {
-            var s = c / 255;
-            return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-          });
-          return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
-        }
-        function contrast(a, b) {
-          var la = luminance(toRgb(a)), lb = luminance(toRgb(b));
-          return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-        }
-        function readableInk(bg) {
-          return contrast(bg, LIGHT_INK) >= contrast(bg, DARK_INK) ? LIGHT_INK : DARK_INK;
-        }
-
-        function palette(hex) {
-          var base = toRgb(hex);
-          var ink = readableInk(toHex(base));
-          var toward = ink === LIGHT_INK ? [0, 0, 0] : [255, 255, 255];
-          for (var i = 0; i < 20 && contrast(toHex(base), ink) < 4.5; i++) {
-            base = mix(base, toward, 0.06);
-          }
-          var brand = toHex(base);
-          var dark = toHex(mix(base, [0, 0, 0], 0.30));
-          var light = toHex(mix(base, [255, 255, 255], 0.90));
-          if (contrast(light, dark) < 4.5) dark = DARK_INK;
-          return { brand: brand, ink: ink, dark: dark, light: light };
-        }
-
-        function update() {
-          var p = palette(themeInput.value);
-          label.textContent = themeInput.value.toUpperCase();
-          bar.style.background = p.brand;
-          bar.style.color = p.ink;
-          btn.style.background = p.brand;
-          btn.style.color = p.ink;
-          tint.style.background = p.light;
-          tint.style.color = p.dark;
-          note.textContent = p.brand.toLowerCase() === themeInput.value.toLowerCase()
-            ? 'Contraste conforme : ' + contrast(p.brand, p.ink).toFixed(1) + ':1'
-            : 'Teinte ajustée en ' + p.brand.toUpperCase() + ' pour garder le texte lisible.';
-        }
-
-        var suggestions = ['#128C7E', '#1E6FD9', '#C2185B', '#E65100', '#6A1B9A', '#00796B', '#B71C1C', '#37474F'];
-        var row = document.querySelector('#palette-suggestions div');
-        suggestions.forEach(function (hex) {
-          var b = document.createElement('button');
-          b.type = 'button';
-          b.title = hex;
-          b.style.cssText = 'width:32px;height:32px;border-radius:50%;border:2px solid #fff;'
-            + 'box-shadow:0 0 0 1px #ccc;cursor:pointer;background:' + hex;
-          b.onclick = function () { themeInput.value = hex; update(); };
-          row.appendChild(b);
-        });
-
-        themeInput.addEventListener('input', update);
-        update();
-      })();
-    </script>
+    <div class="theme-preview" id="theme-preview" aria-live="polite">
+      <div class="tp-bar"><span class="tp-dot"></span>Ma boutique</div>
+      <div class="tp-body">
+        <span class="tp-btn">Commander</span>
+        <span class="tp-chip">Catégorie</span>
+        <a class="tp-link" href="#" onclick="return false">Voir tout</a>
+      </div>
+    </div>
 
     <button class="btn block mt" type="submit">Publier ma boutique</button>
   </form>
+
+<script src="{{ asset('js/theme-picker.js') }}" defer></script>
 {% endblock %}
