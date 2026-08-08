@@ -8,14 +8,11 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from pathlib import Path
-import os
-import uuid
 
 from .. import models, schemas
 from ..database import get_db
 from ..deps import require_permission, require_shop_access
-from ..config import settings
+from ..services import media
 
 router = APIRouter(prefix="/api/shops/{shop_id}", tags=["catalog"])
 
@@ -239,9 +236,6 @@ async def upload_product_image(
     if not files:
         raise HTTPException(status_code=400, detail="Aucun fichier fourni")
 
-    upload_dir = settings.STATIC_DIR / "uploads" / "products"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
     max_position = (
         db.query(func.max(models.ProductImage.position))
         .filter(models.ProductImage.product_id == product_id)
@@ -250,29 +244,14 @@ async def upload_product_image(
 
     images = []
     for file in files:
-        # Validation du fichier
-        if file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
-            raise HTTPException(status_code=400, detail=f"Format d'image non autorisé: {file.filename}")
-
-        ext = file.filename.split('.')[-1].lower()
-        if ext not in {"jpg", "jpeg", "png", "gif", "webp"}:
-            raise HTTPException(status_code=400, detail=f"Extension non autorisée: {ext}")
-
-        content = await file.read()
-        if len(content) > 5 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"Fichier trop volumineux: {file.filename}")
-
-        filename = f"{uuid.uuid4()}.{ext}"
-        filepath = upload_dir / filename
-
-        with open(filepath, "wb") as f:
-            f.write(content)
-
+        # Conservées en base : le disque du conteneur est effacé à chaque
+        # déploiement, ce qui vidait les galeries des commerçants.
+        url = await media.store_upload(db, file, shop_id=shop.id)
         max_position += 1
         image = models.ProductImage(
             shop_id=shop.id,
             product_id=product_id,
-            image_url=f"/static/uploads/products/{filename}",
+            image_url=url,
             position=max_position,
             is_primary=False,
         )
@@ -308,12 +287,9 @@ def delete_product_image(
     if image is None:
         raise HTTPException(404, "Image introuvable.")
 
-    # Supprimer le fichier physique
-    if image.image_url.startswith("/static/uploads/products/"):
-        filename = image.image_url.split("/")[-1]
-        filepath = settings.STATIC_DIR / "uploads" / "products" / filename
-        if filepath.exists():
-            os.remove(filepath)
+    # Libérer aussi l'image stockée, sinon la base conserve indéfiniment des
+    # octets que plus rien ne référence.
+    media.delete(db, image.image_url)
 
     db.delete(image)
     db.commit()

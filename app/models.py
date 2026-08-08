@@ -17,6 +17,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     JSON,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -551,4 +552,27 @@ class AppSetting(Base):
 
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     value: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class MediaFile(Base):
+    """Image téléversée, conservée en base plutôt que sur le disque.
+
+    Le disque d'un conteneur est effacé à chaque déploiement : les photos de
+    produits envoyées par les commerçants disparaissaient donc à la mise à jour
+    suivante, laissant des vignettes cassées dans leur catalogue. Les stocker
+    ici leur donne la même permanence qu'aux commandes.
+
+    Les images sont réduites dans le navigateur avant l'envoi
+    (static/js/image-compress.js), ce qui ramène une photo de téléphone de
+    plusieurs mégaoctets à quelques centaines de kilo-octets.
+    """
+
+    __tablename__ = "media_files"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    shop_id: Mapped[int | None] = mapped_column(ForeignKey("shops.id"), nullable=True, index=True)
+    content_type: Mapped[str] = mapped_column(String(60))
+    size: Mapped[int] = mapped_column(Integer, default=0)
+    data: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

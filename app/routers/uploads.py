@@ -1,56 +1,21 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from pathlib import Path
-import os
-import uuid
-from app.deps import get_current_user
-from app.database import get_db
-from app import models
-from app.config import settings
+"""Envoi d'images (photos de produits, logo de boutique).
+
+Les fichiers sont conservés en base via ``services.media`` : écrits sur le
+disque du conteneur, ils disparaissaient à chaque déploiement.
+"""
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
+
+from app import models
+from app.database import get_db
+from app.deps import get_current_user
+from app.services import media
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
-# Créer les dossiers s'ils n'existent pas
-UPLOAD_DIR = settings.STATIC_DIR / "uploads"
-PRODUCT_DIR = UPLOAD_DIR / "products"
-SHOP_DIR = UPLOAD_DIR / "shops"
-
-PRODUCT_DIR.mkdir(parents=True, exist_ok=True)
-SHOP_DIR.mkdir(parents=True, exist_ok=True)
-
-# Extensions autorisées
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-
-def validate_image(file: UploadFile) -> str:
-    """Valide le fichier image et retourne son extension normalisée."""
-    if file.content_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
-        raise HTTPException(status_code=400, detail="Format d'image non autorisé")
-
-    ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail="Extension non autorisée")
-
-    return ext
-
-
-async def _read_within_limit(file: UploadFile) -> bytes:
-    """Lit le fichier en refusant tout dépassement de taille.
-
-    La lecture est bornée et effectuée avant toute écriture : contrôler la
-    taille après ``open()`` laissait un fichier vide sur le disque à chaque
-    envoi refusé, et lire sans borne exposait la mémoire du serveur.
-    """
-    content = await file.read(MAX_FILE_SIZE + 1)
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 5 Mo)")
-    if not content:
-        raise HTTPException(status_code=400, detail="Fichier vide")
-    return content
-
 
 def _user_shop(db: Session, user: models.User) -> models.Shop:
-    """Boutique du commerçant, en incluant celles où il est membre."""
+    """Boutique du commerçant, en incluant celles où il est simple membre."""
     shop = (
         db.query(models.Shop)
         .outerjoin(models.ShopMember, models.ShopMember.shop_id == models.Shop.id)
@@ -69,43 +34,28 @@ def _user_shop(db: Session, user: models.User) -> models.Shop:
 async def upload_product_image(
     file: UploadFile = File(...),
     user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """Upload une image de produit"""
-
-    file_ext = validate_image(file)
-    _user_shop(db, user)
-    content = await _read_within_limit(file)
-
-    unique_filename = f"{uuid.uuid4()}.{file_ext}"
-    (PRODUCT_DIR / unique_filename).write_bytes(content)
-
-    return {
-        "success": True,
-        "url": f"/static/uploads/products/{unique_filename}",
-        "filename": unique_filename,
-    }
+    """Enregistre une image de produit et retourne son URL."""
+    shop = _user_shop(db, user)
+    url = await media.store_upload(db, file, shop_id=shop.id)
+    db.commit()
+    return {"success": True, "url": url}
 
 
 @router.post("/shop-logo")
 async def upload_shop_logo(
     file: UploadFile = File(...),
     user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """Upload le logo d'une boutique"""
-
-    file_ext = validate_image(file)
+    """Enregistre le logo de la boutique et retourne son URL."""
     shop = _user_shop(db, user)
-    content = await _read_within_limit(file)
-
-    # Nom unique : réutiliser « shop_<id>.<ext> » laissait l'ancien logo en place
-    # lors d'un changement d'extension, et le cache servait la mauvaise image.
-    filename = f"shop_{shop.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
-    (SHOP_DIR / filename).write_bytes(content)
-
-    return {
-        "success": True,
-        "url": f"/static/uploads/shops/{filename}",
-        "filename": filename,
-    }
+    previous = shop.logo_url
+    url = await media.store_upload(db, file, shop_id=shop.id)
+    shop.logo_url = url
+    # L'ancien logo n'est plus référencé : le conserver ferait grossir la base
+    # à chaque changement.
+    media.delete(db, previous)
+    db.commit()
+    return {"success": True, "url": url}

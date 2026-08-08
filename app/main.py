@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -184,6 +184,28 @@ def landing(request: Request):
     return templates.TemplateResponse(request, "landing.html", {"demo_shop": demo_slug})
 
 
+@app.get("/media/{file_id}", include_in_schema=False)
+def serve_media(file_id: str, db: Session = Depends(get_db)):
+    """Sert une image stockée en base.
+
+    Le nom du fichier est un identifiant aléatoire attribué une fois pour
+    toutes et son contenu ne change jamais : la réponse peut donc être mise en
+    cache indéfiniment, ce qui évite de relire la base à chaque affichage du
+    catalogue.
+    """
+    media = db.get(models.MediaFile, file_id)
+    if media is None:
+        raise StarletteHTTPException(status_code=404, detail="Image introuvable")
+    return Response(
+        content=media.data,
+        media_type=media.content_type,
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Content-Length": str(media.size or len(media.data)),
+        },
+    )
+
+
 def _describe_env(name: str) -> str:
     """État d'une variable d'environnement, sans jamais en révéler la valeur."""
     import os
@@ -213,6 +235,19 @@ def health():
         "env": {
             "SMARTSHOP_DATABASE_URL": _describe_env("SMARTSHOP_DATABASE_URL"),
             "DATABASE_URL": _describe_env("DATABASE_URL"),
+        },
+        # État de la configuration Campay, sans aucune valeur : « authentification
+        # refusée » ne disait pas si un identifiant manquait ou si les
+        # identifiants d'un environnement étaient présentés à l'autre.
+        "campay": {
+            "mode": settings.CAMPAY_MODE,
+            "api_user": "definie" if settings.CAMPAY_API_USER else "ABSENTE",
+            "api_password": "definie" if settings.CAMPAY_API_PASSWORD else "ABSENTE",
+            "webhook_key": "definie" if settings.CAMPAY_WEBHOOK_KEY else "ABSENTE",
+            "endpoint": {
+                "sandbox": "https://demo.campay.net/api",
+                "production": "https://www.campay.net/api",
+            }.get(settings.CAMPAY_MODE, "mode inconnu"),
         },
     }
 

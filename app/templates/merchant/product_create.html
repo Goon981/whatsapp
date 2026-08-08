@@ -154,6 +154,8 @@
   </form>
 </div>
 
+<script src="{{ asset('js/image-compress.js') }}"></script>
+
 <script>
 (function() {
   const zone = document.getElementById('uploadZone');
@@ -242,7 +244,7 @@
 
   // Form submission — toujours envoyé en fetch. Sans preventDefault dans le cas
   // « aucune image », le formulaire partait en GET et le produit n'était pas créé.
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const submitBtn = form.querySelector('.btn-submit') || document.getElementById('submit-btn');
@@ -253,7 +255,16 @@
     showNotice('');
 
     const formData = new FormData(form);
-    selectedFiles.forEach(file => formData.append('files', file));
+
+    // Les photos de téléphone pèsent plusieurs mégaoctets : les réduire ici
+    // divise le temps d'envoi par dix sur une connexion mobile.
+    let files = selectedFiles;
+    if (window.compressImages && selectedFiles.length) {
+      if (submitBtn) submitBtn.textContent = 'Préparation des images…';
+      try { files = await window.compressImages(selectedFiles); } catch (err) { files = selectedFiles; }
+      if (submitBtn) submitBtn.textContent = 'Création en cours…';
+    }
+    files.forEach(file => formData.append('files', file));
 
     fetch('/app/products', { method: 'POST', body: formData, credentials: 'same-origin' })
       .then(r => {

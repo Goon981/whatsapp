@@ -351,6 +351,8 @@
     </div>
 </div>
 
+<script src="{{ asset('js/image-compress.js') }}"></script>
+
 <script>
     const dropzone = document.getElementById('dropzone');
     const imageInput = document.getElementById('imageInput');
@@ -379,6 +381,12 @@
             }
 
             const formData = new FormData();
+            // Réduite une seule fois, avant la première tentative : la
+            // recompresser à chaque nouvel essai serait du travail perdu.
+            if (!this.prepared && window.compressImage) {
+                try { this.file = await window.compressImage(this.file); } catch (err) { /* on garde l'original */ }
+                this.prepared = true;
+            }
             formData.append('file', this.file);
 
             try {

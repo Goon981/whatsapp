@@ -340,8 +340,22 @@ async def _campay_collect(reference: str, amount: int, phone: str, description: 
             },
         )
         if token_res.status_code != 200:
-            logger.error("Campay: authentification refusée (%s) %s", token_res.status_code, token_res.text)
-            raise HTTPException(status_code=502, detail="Authentification Campay refusée")
+            # Message exploitable par le commerçant : « authentification refusée »
+            # ne disait pas quoi corriger, et la cause la plus fréquente est
+            # d'utiliser les identifiants d'un environnement contre l'autre.
+            logger.error(
+                "Campay (%s, %s) : authentification refusée (%s) %s",
+                settings.CAMPAY_MODE, base, token_res.status_code, token_res.text,
+            )
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Campay a refusé les identifiants en mode « {settings.CAMPAY_MODE} ». "
+                    "Vérifiez CAMPAY_API_USER et CAMPAY_API_PASSWORD, et que ce sont bien "
+                    "ceux de cet environnement : les identifiants de démonstration ne "
+                    "fonctionnent pas en production, ni l'inverse."
+                ),
+            )
 
         token = token_res.json().get("token")
         if not token:
