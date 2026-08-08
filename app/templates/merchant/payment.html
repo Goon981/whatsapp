@@ -395,11 +395,12 @@
                 .then(res => res.json().catch(() => ({})).then(data => ({ res, data })))
                 .then(({ res, data }) => {
                     if (res.ok && data.success) {
-                        showMessage(
-                            'Paiement initié. Confirmez la demande sur votre téléphone pour activer votre abonnement.',
-                            'ok'
-                        );
-                        setTimeout(() => { window.location.href = '/app/dashboard'; }, 2500);
+                        // Une demande envoyée n'est pas un paiement encaissé : la
+                        // page redirigeait vers le tableau de bord au bout de
+                        // 2,5 s, ce qui donnait à croire que l'abonnement était
+                        // actif alors que rien n'avait été confirmé. On attend
+                        // désormais que le serveur voie le paiement arriver.
+                        awaitConfirmation(data, restore);
                         return;
                     }
                     // Remonter le motif réel renvoyé par le serveur plutôt qu'un
@@ -416,6 +417,64 @@
                     showMessage('Connexion au serveur impossible : ' + err.message, 'err');
                     restore();
                 });
+        }
+
+        /* Attente de la confirmation du paiement.
+
+           Seul le webhook Campay active l'abonnement : le navigateur ne peut
+           que constater le résultat. On interroge donc l'état de l'abonnement
+           jusqu'à ce qu'il devienne actif, plutôt que de supposer le succès. */
+        const CONFIRM_POLL_MS = 3000;
+        const CONFIRM_TIMEOUT_MS = 150000;   // 2 min 30, au-delà l'utilisateur a abandonné
+
+        function awaitConfirmation(data, restore) {
+            const btn = document.getElementById('confirmBtn');
+            // Message en texte simple : showMessage écrit via textContent, et le
+            // numéro provient de la saisie du commerçant — l'insérer en HTML
+            // ouvrirait une injection.
+            const ussd = data.ussd_code ? ` Si rien ne s'affiche, composez ${data.ussd_code}.` : '';
+            const montant = data.test_mode
+                ? ` (test : ${data.charged_amount} XAF au lieu de ${data.amount})`
+                : '';
+
+            btn.disabled = true;
+            btn.textContent = 'En attente de votre confirmation…';
+            showMessage(
+                `Demande envoyée au ${data.phone}.${montant}`
+                + ` Validez-la sur votre téléphone.${ussd}`
+                + ' Cette page se mettra à jour toute seule.',
+                'info'
+            );
+
+            const deadline = Date.now() + CONFIRM_TIMEOUT_MS;
+
+            const poll = () => {
+                fetch(`/api/billing/status/${SHOP_ID}`, { credentials: 'same-origin' })
+                    .then(r => (r.ok ? r.json() : null))
+                    .then(status => {
+                        if (status && status.status === 'active') {
+                            btn.textContent = 'Paiement confirmé';
+                            showMessage('Paiement confirmé, votre abonnement est actif.', 'ok');
+                            setTimeout(() => { window.location.href = '/app/dashboard'; }, 1500);
+                            return;
+                        }
+                        if (Date.now() > deadline) {
+                            showMessage(
+                                'Confirmation non reçue pour l\'instant. Si vous avez validé sur '
+                                + 'votre téléphone, l\'abonnement s\'activera dès que l\'opérateur '
+                                + 'aura transmis le paiement — rechargez la page dans quelques '
+                                + 'minutes. Sinon, réessayez.',
+                                'err'
+                            );
+                            restore();
+                            return;
+                        }
+                        setTimeout(poll, CONFIRM_POLL_MS);
+                    })
+                    .catch(() => setTimeout(poll, CONFIRM_POLL_MS));
+            };
+
+            setTimeout(poll, CONFIRM_POLL_MS);
         }
 
         function skipPayment() {
