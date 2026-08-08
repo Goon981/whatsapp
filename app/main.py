@@ -221,6 +221,31 @@ def _describe_env(name: str) -> str:
     return f"définie ({scheme})"
 
 
+_CAMPAY_ENDPOINTS = {
+    "sandbox": "https://demo.campay.net/api",
+    "production": "https://www.campay.net/api",
+}
+
+
+def _describe_campay() -> dict:
+    """État de la configuration Campay, sans jamais restituer une valeur.
+
+    ``CAMPAY_MODE`` n'attend que « sandbox » ou « production ». Restituer la
+    valeur telle quelle a publié un secret sur cette page, qui est ouverte à
+    tous, le jour où une clé y avait été collée par erreur : on ne renvoie donc
+    que des valeurs connues d'avance.
+    """
+    mode = (settings.CAMPAY_MODE or "").strip()
+    known = mode in _CAMPAY_ENDPOINTS
+    return {
+        "mode": mode if known else "VALEUR INATTENDUE (attendu : sandbox ou production)",
+        "api_user": "definie" if settings.CAMPAY_API_USER else "ABSENTE",
+        "api_password": "definie" if settings.CAMPAY_API_PASSWORD else "ABSENTE",
+        "webhook_key": "definie" if settings.CAMPAY_WEBHOOK_KEY else "ABSENTE",
+        "endpoint": _CAMPAY_ENDPOINTS.get(mode, "indetermine"),
+    }
+
+
 @app.get("/health", include_in_schema=False)
 def health():
     # Le moteur seul est exposé (jamais l'URL, qui porte les identifiants) :
@@ -239,16 +264,7 @@ def health():
         # État de la configuration Campay, sans aucune valeur : « authentification
         # refusée » ne disait pas si un identifiant manquait ou si les
         # identifiants d'un environnement étaient présentés à l'autre.
-        "campay": {
-            "mode": settings.CAMPAY_MODE,
-            "api_user": "definie" if settings.CAMPAY_API_USER else "ABSENTE",
-            "api_password": "definie" if settings.CAMPAY_API_PASSWORD else "ABSENTE",
-            "webhook_key": "definie" if settings.CAMPAY_WEBHOOK_KEY else "ABSENTE",
-            "endpoint": {
-                "sandbox": "https://demo.campay.net/api",
-                "production": "https://www.campay.net/api",
-            }.get(settings.CAMPAY_MODE, "mode inconnu"),
-        },
+        "campay": _describe_campay(),
     }
 
 
