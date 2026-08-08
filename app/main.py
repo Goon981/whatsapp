@@ -239,6 +239,12 @@ def _describe_campay() -> dict:
     known = mode in _CAMPAY_ENDPOINTS
     return {
         "mode": mode if known else "VALEUR INATTENDUE (attendu : sandbox ou production)",
+        "authentification": (
+            "jeton permanent" if settings.CAMPAY_PERMANENT_TOKEN
+            else "identifiants" if (settings.CAMPAY_API_USER and settings.CAMPAY_API_PASSWORD)
+            else "AUCUNE (paiements simules)"
+        ),
+        "permanent_token": "defini" if settings.CAMPAY_PERMANENT_TOKEN else "absent",
         "api_user": "definie" if settings.CAMPAY_API_USER else "ABSENTE",
         "api_password": "definie" if settings.CAMPAY_API_PASSWORD else "ABSENTE",
         "webhook_key": "definie" if settings.CAMPAY_WEBHOOK_KEY else "ABSENTE",

@@ -214,6 +214,9 @@ class Settings:
     CAMPAY_API_USER: str = os.getenv("CAMPAY_API_USER", "")
     CAMPAY_API_PASSWORD: str = os.getenv("CAMPAY_API_PASSWORD", "")
     CAMPAY_WEBHOOK_KEY: str = os.getenv("CAMPAY_WEBHOOK_KEY", "")
+    # Jeton permanent Campay : dispense de l'échange identifiants/jeton avant
+    # chaque paiement. Prioritaire sur CAMPAY_API_USER / CAMPAY_API_PASSWORD.
+    CAMPAY_PERMANENT_TOKEN: str = os.getenv("CAMPAY_PERMANENT_TOKEN", "")
     CAMPAY_MODE: str = os.getenv("CAMPAY_MODE", "sandbox")
 
     TEMPLATES_DIR: Path = BASE_DIR / "templates"

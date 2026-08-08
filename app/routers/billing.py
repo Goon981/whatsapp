@@ -318,8 +318,57 @@ async def process_payment_sandbox(
 
 
 def _campay_configured() -> bool:
-    """Campay n'est utilisable qu'avec un compte API complet."""
-    return bool(settings.CAMPAY_API_USER and settings.CAMPAY_API_PASSWORD)
+    """Campay est utilisable avec un jeton permanent ou un couple identifiants."""
+    return bool(
+        settings.CAMPAY_PERMANENT_TOKEN
+        or (settings.CAMPAY_API_USER and settings.CAMPAY_API_PASSWORD)
+    )
+
+
+async def _campay_token(client: httpx.AsyncClient, base: str) -> str:
+    """Jeton d'accès pour les appels Campay.
+
+    Campay accepte deux modes d'authentification. Le jeton permanent, s'il est
+    fourni, est utilisé tel quel : il épargne un aller-retour réseau par
+    paiement et supprime l'étape d'authentification, qui est la principale
+    source d'échec en production. Sinon on échange identifiants contre un jeton
+    temporaire.
+    """
+    permanent = settings.CAMPAY_PERMANENT_TOKEN.strip()
+    if permanent:
+        return permanent
+
+    token_res = await client.post(
+        f"{base}/token/",
+        json={
+            "username": settings.CAMPAY_API_USER,
+            "password": settings.CAMPAY_API_PASSWORD,
+        },
+    )
+    if token_res.status_code != 200:
+        # Message exploitable par le commerçant : « authentification refusée »
+        # ne disait pas quoi corriger, et la cause la plus fréquente est
+        # d'utiliser les identifiants d'un environnement contre l'autre.
+        logger.error(
+            "Campay (%s, %s) : authentification refusée (%s) %s",
+            settings.CAMPAY_MODE, base, token_res.status_code, token_res.text,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                f"Campay a refusé les identifiants en mode « {settings.CAMPAY_MODE} ». "
+                "Vérifiez CAMPAY_API_USER et CAMPAY_API_PASSWORD, et que ce sont bien "
+                "ceux de cet environnement : les identifiants de démonstration ne "
+                "fonctionnent pas en production, ni l'inverse. Un jeton permanent "
+                "dans CAMPAY_PERMANENT_TOKEN évite entièrement cette étape."
+            ),
+        )
+
+    token = token_res.json().get("token")
+    if not token:
+        logger.error("Campay : réponse d'authentification inattendue %s", token_res.text)
+        raise HTTPException(status_code=502, detail="Réponse Campay invalide")
+    return token
 
 
 async def _campay_collect(reference: str, amount: int, phone: str, description: str) -> dict:
@@ -332,36 +381,7 @@ async def _campay_collect(reference: str, amount: int, phone: str, description: 
     base = CAMPAY_BASE_URLS.get(settings.CAMPAY_MODE, CAMPAY_BASE_URLS["sandbox"])
 
     async with httpx.AsyncClient(timeout=CAMPAY_TIMEOUT) as client:
-        token_res = await client.post(
-            f"{base}/token/",
-            json={
-                "username": settings.CAMPAY_API_USER,
-                "password": settings.CAMPAY_API_PASSWORD,
-            },
-        )
-        if token_res.status_code != 200:
-            # Message exploitable par le commerçant : « authentification refusée »
-            # ne disait pas quoi corriger, et la cause la plus fréquente est
-            # d'utiliser les identifiants d'un environnement contre l'autre.
-            logger.error(
-                "Campay (%s, %s) : authentification refusée (%s) %s",
-                settings.CAMPAY_MODE, base, token_res.status_code, token_res.text,
-            )
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    f"Campay a refusé les identifiants en mode « {settings.CAMPAY_MODE} ». "
-                    "Vérifiez CAMPAY_API_USER et CAMPAY_API_PASSWORD, et que ce sont bien "
-                    "ceux de cet environnement : les identifiants de démonstration ne "
-                    "fonctionnent pas en production, ni l'inverse."
-                ),
-            )
-
-        token = token_res.json().get("token")
-        if not token:
-            logger.error("Campay: réponse token inattendue %s", token_res.text)
-            raise HTTPException(status_code=502, detail="Réponse Campay invalide")
-
+        token = await _campay_token(client, base)
         collect_res = await client.post(
             f"{base}/collect/",
             headers={"Authorization": f"Token {token}"},
