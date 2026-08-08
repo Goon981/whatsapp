@@ -5,12 +5,14 @@ applications HTML : storefront public, espace commerçant et super-administratio
 """
 from __future__ import annotations
 
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -36,6 +38,7 @@ from .routers import (
     superadmin,
     uploads,
 )
+from .startup import enforce_subscriptions_loop, load_signing_key
 from .templating import templates
 
 logging.basicConfig(level=logging.INFO)
@@ -44,9 +47,25 @@ logger = logging.getLogger("smartshop")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    logger.info("BAOBAY démarré (env=%s).", settings.ENV)
-    yield
+    load_signing_key()
+    # Suspension des abonnements échus. Portée par l'application faute de
+    # planificateur côté hébergeur : sans elle, la route dédiée n'était appelée
+    # par personne et aucun essai expiré n'était jamais fermé.
+    watcher = asyncio.create_task(enforce_subscriptions_loop())
+    logger.info("BAOBAY démarré (env=%s, base=%s).", settings.ENV, settings.DATABASE_URL.split("://", 1)[0])
+    try:
+        yield
+    finally:
+        watcher.cancel()
+        with suppress(asyncio.CancelledError):
+            await watcher
 
+
+# La documentation interactive détaille les 46 routes, leurs paramètres et
+# leurs schémas : utile en développement, inutile à un visiteur de la vitrine et
+# précieuse pour qui cherche une prise. Elle reste accessible en production à
+# qui définit SMARTSHOP_EXPOSE_DOCS.
+_docs_open = not settings.IS_PRODUCTION or settings.EXPOSE_DOCS
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -56,7 +75,15 @@ app = FastAPI(
         "Montants en entiers FCFA, isolation multi-tenant par boutique."
     ),
     lifespan=lifespan,
+    docs_url="/docs" if _docs_open else None,
+    redoc_url="/redoc" if _docs_open else None,
+    openapi_url="/openapi.json" if _docs_open else None,
 )
+
+# Compression : aujourd'hui assurée par le routeur de l'hébergeur, mais celui-ci
+# peut changer ou disparaître selon l'endroit où l'application est déployée.
+# Starlette ne compresse pas deux fois — l'en-tête posé en amont est respecté.
+app.add_middleware(GZipMiddleware, minimum_size=800)
 
 # --- CORS (pour frontend React) -------------------------------------------- #
 # Liste explicite d'origines : « * » combiné à ``allow_credentials`` conduit

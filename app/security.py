@@ -19,6 +19,22 @@ from .config import settings
 _PBKDF2_ROUNDS = 210_000
 _ALGO = "sha256"
 
+# Clé de signature effective. Renseignée au démarrage depuis la base
+# (``install_signing_key``) pour que les sessions survivent au renouvellement du
+# mot de passe PostgreSQL, dont la clé était auparavant dérivée.
+_signing_key: str | None = None
+
+
+def install_signing_key(key: str) -> None:
+    """Fixe la clé de signature pour la durée du processus."""
+    global _signing_key
+    _signing_key = key
+
+
+def signing_key() -> str:
+    """Clé courante : celle de la base si elle existe, sinon celle de l'environnement."""
+    return _signing_key or settings.SECRET_KEY
+
 
 # --------------------------------------------------------------------------- #
 # Mots de passe
@@ -68,7 +84,7 @@ def create_token(payload: dict, max_age: int | None = None) -> str:
     max_age = max_age if max_age is not None else settings.SESSION_MAX_AGE
     data["exp"] = now + max_age
     body = _b64url_encode(json.dumps(data, separators=(",", ":")).encode("utf-8"))
-    sig = hmac.new(settings.SECRET_KEY.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest()
+    sig = hmac.new(signing_key().encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest()
     return f"{body}.{_b64url_encode(sig)}"
 
 
@@ -79,7 +95,7 @@ def verify_token(token: str) -> dict | None:
     except (ValueError, AttributeError):
         return None
     expected_sig = hmac.new(
-        settings.SECRET_KEY.encode("utf-8"), body.encode("ascii"), hashlib.sha256
+        signing_key().encode("utf-8"), body.encode("ascii"), hashlib.sha256
     ).digest()
     try:
         given_sig = _b64url_decode(sig_b64)

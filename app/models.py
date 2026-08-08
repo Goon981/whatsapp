@@ -537,3 +537,18 @@ class AuditLog(Base):
     shop_id: Mapped[int | None] = mapped_column(ForeignKey("shops.id"), nullable=True, index=True)
     data: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class AppSetting(Base):
+    """Réglages persistants de l'application, hors variables d'environnement.
+
+    Sert notamment à conserver la clé de signature des sessions : dérivée de
+    l'URL de base de données, elle changeait dès que le mot de passe PostgreSQL
+    était renouvelé, et déconnectait tout le monde.
+    """
+
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

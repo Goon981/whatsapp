@@ -177,6 +177,9 @@ class Settings:
 
     # Bootstrap du super-administrateur après un déploiement neuf. L'endpoint
     # /api/setup/create-superadmin reste inerte tant que ce jeton est vide.
+    # Documentation OpenAPI : fermée d'office en production (voir main.py).
+    EXPOSE_DOCS: bool = _get_bool("SMARTSHOP_EXPOSE_DOCS", False)
+
     SETUP_TOKEN: str = os.getenv("SMARTSHOP_SETUP_TOKEN", "")
     ADMIN_EMAIL: str = os.getenv("SMARTSHOP_ADMIN_EMAIL", "")
     ADMIN_PASSWORD: str = os.getenv("SMARTSHOP_ADMIN_PASSWORD", "")
