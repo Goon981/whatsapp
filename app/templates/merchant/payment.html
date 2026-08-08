@@ -223,6 +223,23 @@
 
     <main class="container page">
         <section class="content">
+            {% if expired %}
+            {# Le commerçant vient d'être renvoyé d'une page verrouillée : lui
+               dire pourquoi, sinon la redirection passe pour une panne. #}
+            <div class="flash err">
+                {{ icon('lock', 18) }}
+                Votre période d'essai est terminée. Choisissez une formule pour
+                retrouver l'accès à votre boutique.
+            </div>
+            {% elif logo_refuse %}
+            <div class="flash err">
+                {{ icon('alert', 18) }}
+                Votre boutique est créée, mais le logo n'a pas pu être enregistré
+                (format non accepté ou fichier de plus de 5 Mo). Vous pourrez
+                l'ajouter depuis les réglages.
+            </div>
+            {% endif %}
+
             <div class="trial-banner">
                 <div>{{ icon('check', 18) }}</div>
                 <strong>Vous avez 14 jours pour payer</strong>

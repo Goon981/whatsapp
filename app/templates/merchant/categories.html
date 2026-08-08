@@ -1,0 +1,52 @@
+{% extends "merchant/base.html" %}
+{% block title %}Catégories{% endblock %}
+{% block heading %}Catégories{% endblock %}
+{% block subheading %}{{ categories|length }} catégorie(s){% endblock %}
+{% block content %}
+
+  <a href="/app/products" class="muted small" style="display:inline-block;margin:0 2px 8px">
+    {{ icon('arrow-left', 18) }} Produits
+  </a>
+
+  <div class="card">
+    <h3>Ajouter une catégorie</h3>
+    <p class="hint" style="margin-top:0">Elles regroupent vos produits dans la vitrine.</p>
+    <form method="post" action="/app/categories" class="row" style="align-items:flex-end;gap:10px">
+      <div class="grow">
+        <label for="name" style="margin-top:0">Nom</label>
+        <input id="name" name="name" placeholder="Ex. Boissons" required maxlength="80">
+      </div>
+      <button class="btn" type="submit" style="flex:none">{{ icon('plus', 18) }} Ajouter</button>
+    </form>
+  </div>
+
+  {% if categories %}
+  <div class="list mt">
+    {% for c in categories %}
+    <div class="row-item">
+      <div class="th">{{ icon('folder', 20) }}</div>
+      <div class="grow">
+        <div class="t1">{{ c.name }}</div>
+        <div class="t2">
+          {{ c.products|length }} produit(s)
+        </div>
+      </div>
+      {# La suppression est définitive : une confirmation évite le clic malheureux.
+         Le serveur refuse de son côté si des produits y sont encore rattachés. #}
+      <form method="post" action="/app/categories/{{ c.id }}/delete"
+            onsubmit="return confirm('Supprimer la catégorie « {{ c.name|e }} » ?')">
+        <button class="btn ghost" type="submit" aria-label="Supprimer {{ c.name }}"
+                title="Supprimer">{{ icon('trash', 18) }}</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card center mt">
+    <div class="ph" style="height:64px;margin-bottom:8px">{{ icon('folder', 44) }}</div>
+    <p class="muted">Aucune catégorie pour l'instant.</p>
+    <p class="hint">Sans catégorie, tous vos produits apparaissent dans une seule liste.</p>
+  </div>
+  {% endif %}
+
+{% endblock %}

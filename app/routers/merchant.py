@@ -513,11 +513,19 @@ async def onboarding_submit(
 # --------------------------------------------------------------------------- #
 # Dépendance de page protégée
 # --------------------------------------------------------------------------- #
-def _require_shop(request: Request, db: Session):
+def _require_shop(request: Request, db: Session, *, require_subscription: bool = True):
     """Retourne (user, shop) ou une réponse de redirection/blocage.
 
     Si la boutique est suspendue (impayé ou décision admin), on affiche une page
     de régularisation au lieu du tableau de bord.
+
+    Le contrôle d'abonnement est fait ici, et non dans chaque page : il n'était
+    appelé que par le tableau de bord, si bien qu'un commerçant sans essai
+    valide ni abonnement en était renvoyé mais continuait d'utiliser
+    ``/app/products``, ``/app/orders`` et le reste en s'y rendant directement.
+
+    ``require_subscription=False`` pour les pages qui doivent rester
+    atteignables sans abonnement, faute de quoi payer deviendrait impossible.
     """
     user = _current_user(request, db)
     if user is None:
@@ -531,6 +539,8 @@ def _require_shop(request: Request, db: Session):
             {"shop": shop, "reason": shop.suspended_reason, "support_number": settings.SUPPORT_WHATSAPP},
             status_code=403,
         )
+    if require_subscription and not _check_subscription_active(shop):
+        return None, _redirect("/app/payment?expire=1")
     return (user, shop), None
 
 
@@ -543,10 +553,6 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     if redirect:
         return redirect
     user, shop = ctx
-
-    # Vérifier si l'abonnement est expiré
-    if not _check_subscription_active(shop):
-        return _redirect("/app/payment")
 
     stats = stats_service.shop_dashboard(db, shop.id)
     recent_orders = (
@@ -604,7 +610,9 @@ def stats_page(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/profile", response_class=HTMLResponse)
 def profile_page(request: Request, db: Session = Depends(get_db)):
-    ctx, redirect = _require_shop(request, db)
+    # Accessible sans abonnement : c'est d'ici que le commerçant rejoint la
+    # page de paiement et se déconnecte.
+    ctx, redirect = _require_shop(request, db, require_subscription=False)
     if redirect:
         return redirect
     user, shop = ctx
@@ -1155,6 +1163,15 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
     shop = _active_shop(db, user)
     if shop is None:
         return _redirect("/app/onboarding")
-    return templates.TemplateResponse(request, "merchant/payment.html", {"shop": shop, "user": user})
+    return templates.TemplateResponse(
+        request, "merchant/payment.html",
+        {
+            "shop": shop, "user": user,
+            # Arriver ici depuis une page bloquée sans explication laissait le
+            # commerçant croire à une erreur du site.
+            "expired": request.query_params.get("expire") == "1",
+            "logo_refuse": request.query_params.get("logo") == "refuse",
+        },
+    )
 
 
